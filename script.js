@@ -8,6 +8,7 @@ const firebaseConfig = {
   appId: "1:984193094318:web:5c5614bf83a431b98f133f",
   measurementId: "G-L254S3YZ5D"
 };
+firebase.initializeApp(firebaseConfig);
 const $=s=>document.querySelector(s); const $$=s=>document.querySelectorAll(s);
 const pages={dashboard:'Storage Dashboard',sensors:'Live Sensor Network',prediction:'AI Spoilage Prediction',alerts:'Alerts & Actions',storage:'Storage Batches',reports:'Reports & Analytics',settings:'Settings'};
 const alerts=[
