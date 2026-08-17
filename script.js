@@ -1,3 +1,13 @@
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBxVrLZ0YYaGYcEjxL2gyDXKaudDyPNvZM",
+  authDomain: "predictstor.firebaseapp.com",
+  projectId: "predictstor",
+  storageBucket: "predictstor.firebasestorage.app",
+  messagingSenderId: "984193094318",
+  appId: "1:984193094318:web:5c5614bf83a431b98f133f",
+  measurementId: "G-L254S3YZ5D"
+};
 const $=s=>document.querySelector(s); const $$=s=>document.querySelectorAll(s);
 const pages={dashboard:'Storage Dashboard',sensors:'Live Sensor Network',prediction:'AI Spoilage Prediction',alerts:'Alerts & Actions',storage:'Storage Batches',reports:'Reports & Analytics',settings:'Settings'};
 const alerts=[
