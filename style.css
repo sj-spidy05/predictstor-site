@@ -21,6 +21,47 @@
   margin: 6px 0;
   padding: 10px;
 }
+#authMenu {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+
+#menuBtn {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background: #1f5c3a;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+#loginPanel {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  width: 280px;
+  padding: 18px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 6px 25px rgba(0,0,0,0.2);
+}
+
+#loginPanel input {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 7px 0;
+  padding: 10px;
+}
+
+#loginPanel button {
+  margin: 6px 4px 0 0;
+  padding: 8px 12px;
+  cursor: pointer;
+}
 
 #authBox button {
   margin: 6px 4px 0 0;
