@@ -34,3 +34,71 @@ $('#ventBtn').onclick=()=>{showToast('Ventilation cycle started • 10 minutes')
 $('#notificationBtn').onclick=()=>navigate('alerts');$('#newBatch').onclick=()=>showToast('New batch form ready for integration');$('#downloadBtn').onclick=()=>showToast('Report generation started');$('#csvBtn').onclick=()=>showToast('Sensor CSV export prepared');$('#saveSettings').onclick=()=>showToast('Settings saved successfully');$('#batchSearch').oninput=e=>renderBatches(e.target.value);$('#chartRange').onchange=e=>showToast('Chart range changed to '+e.target.value);
 renderAlerts();renderBatches();renderSensors();drawEnv();window.addEventListener('resize',()=>{drawEnv();if($('#sensors').classList.contains('active-page'))drawSensorChart()});
 setInterval(()=>{const t=(24+Math.random()*1.5).toFixed(1),h=Math.round(67+Math.random()*3),g=(.78+Math.random()*.12).toFixed(2);$('#tempVal').textContent=t+'°C';$('#humidVal').textContent=h+'%';$('#gasVal').textContent=g+' ppm'},5000);
+// Farmer Phone Login
+const farmerMenuBtn = document.getElementById("menuBtn");
+const farmerLoginPanel = document.getElementById("loginPanel");
+const farmerSendOtpBtn = document.getElementById("sendOtpBtn");
+const farmerVerifyOtpBtn = document.getElementById("verifyOtpBtn");
+const farmerCloseLoginBtn = document.getElementById("closeLoginBtn");
+
+let farmerConfirmationResult = null;
+let farmerRecaptchaVerifier = null;
+
+farmerMenuBtn.addEventListener("click", () => {
+  farmerLoginPanel.style.display =
+    farmerLoginPanel.style.display === "none" ? "block" : "none";
+});
+
+farmerCloseLoginBtn.addEventListener("click", () => {
+  farmerLoginPanel.style.display = "none";
+});
+
+farmerSendOtpBtn.addEventListener("click", async () => {
+  const phone = document.getElementById("phoneNumber").value.trim();
+
+  if (!phone) {
+    alert("Please enter your mobile number.");
+    return;
+  }
+
+  try {
+    if (!farmerRecaptchaVerifier) {
+      farmerRecaptchaVerifier = new firebase.auth.RecaptchaVerifier(
+        "recaptcha-container",
+        { size: "normal" }
+      );
+
+      await farmerRecaptchaVerifier.render();
+    }
+
+    farmerConfirmationResult =
+      await firebase.auth().signInWithPhoneNumber(
+        phone,
+        farmerRecaptchaVerifier
+      );
+
+    document.getElementById("otpSection").style.display = "block";
+    alert("OTP sent to your mobile number.");
+  } catch (error) {
+    console.error(error);
+    alert("OTP send failed. Please check your number.");
+  }
+});
+
+farmerVerifyOtpBtn.addEventListener("click", async () => {
+  const otp = document.getElementById("otpCode").value.trim();
+
+  if (!farmerConfirmationResult) {
+    alert("First request an OTP.");
+    return;
+  }
+
+  try {
+    await farmerConfirmationResult.confirm(otp);
+    alert("Login successful!");
+    farmerLoginPanel.style.display = "none";
+  } catch (error) {
+    console.error(error);
+    alert("Invalid OTP. Please try again.");
+  }
+});
