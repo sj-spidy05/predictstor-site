@@ -10,13 +10,25 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<div id="authBox">
-  <h2>Login / Register</h2>
-  <input type="email" id="email" placeholder="Email">
-  <input type="password" id="password" placeholder="Password">
-  <button id="registerBtn">Register</button>
-  <button id="loginBtn">Login</button>
-  <button id="logoutBtn">Logout</button>
+<div id="authMenu">
+  <button id="menuBtn">⋮</button>
+
+  <div id="loginPanel" style="display:none;">
+    <h3>Farmer Login</h3>
+
+    <input type="tel" id="phoneNumber" placeholder="+91 9876543210">
+
+    <div id="recaptcha-container"></div>
+
+    <button id="sendOtpBtn">Send OTP</button>
+
+    <div id="otpSection" style="display:none;">
+      <input type="text" id="otpCode" placeholder="Enter OTP">
+      <button id="verifyOtpBtn">Verify OTP</button>
+    </div>
+
+    <button id="closeLoginBtn">Close</button>
+  </div>
 </div>
   <button> Enable SMS Alert </button> <aside class="sidebar">
     <div class="brand"><div class="brand-mark">P</div><div><strong>PredicStor</strong><span>Smart Onion Storage</span></div></div>
