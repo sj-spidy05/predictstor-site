@@ -106,18 +106,3 @@ farmerVerifyOtpBtn.addEventListener("click", async () => {
     alert("Invalid OTP. Please try again.");
   }
 });
-firebase.auth().onAuthStateChanged((user) => {
-  if (user) {
-    farmerLoginPanel.style.display = "none";
-    const userName = document.getElementById("userName");
-const userRole = document.getElementById("userRole");
-
-if (userName) {
-    userName.textContent = user.phoneNumber || user.email || "Logged in user";
-}
-
-if (userRole) {
-    userRole.textContent = "Farmer";
-}
-  }
-});
