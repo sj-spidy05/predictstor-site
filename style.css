@@ -912,3 +912,29 @@ th{
     opacity: 1 !important;
   }
 }
+/* MOBILE - SHOW ALL NAVIGATION ITEMS INCLUDING SETTINGS */
+@media (max-width: 768px) {
+
+  .sidebar,
+  .nav,
+  .nav-menu {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    max-height: none !important;
+    height: auto !important;
+    padding-bottom: 90px !important;
+  }
+
+  .nav-item,
+  .nav-item[data-page="settings"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+  }
+
+  .nav-item:last-child {
+    display: flex !important;
+    visibility: visible !important;
+  }
+}
