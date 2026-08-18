@@ -84,3 +84,32 @@
     flex-wrap: wrap;
   }
 }
+@media (max-width: 768px) {
+  .grid.two-col {
+    grid-template-columns: 1fr !important;
+    width: 100% !important;
+  }
+
+  .cards-4 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .card {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .main,
+  .content,
+  .dashboard {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  header {
+    width: 100% !important;
+    flex-wrap: wrap !important;
+  }
+} 
