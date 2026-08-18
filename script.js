@@ -106,3 +106,66 @@ farmerVerifyOtpBtn.addEventListener("click", async () => {
     alert("Invalid OTP. Please try again.");
   }
 });
+// USER PROFILE + LOGOUT
+firebase.auth().onAuthStateChanged((user) => {
+  const profileMenu = document.getElementById("userProfileMenu");
+  const userName = document.getElementById("userName");
+  const userRole = document.getElementById("userRole");
+
+  const profileUserName = document.getElementById("profileUserName");
+  const profileUserRole = document.getElementById("profileUserRole");
+  const profileUserPhone = document.getElementById("profileUserPhone");
+  const profileAvatar = document.getElementById("profileAvatar");
+
+  if (user) {
+    if (farmerLoginPanel) {
+      farmerLoginPanel.style.display = "none";
+    }
+
+    const phone = user.phoneNumber || "";
+    const email = user.email || "";
+    const displayName = phone || email || "Logged in user";
+
+    if (userName) userName.textContent = displayName;
+    if (userRole) userRole.textContent = "Farmer";
+
+    if (profileUserName) profileUserName.textContent = displayName;
+    if (profileUserRole) profileUserRole.textContent = "Farmer";
+    if (profileUserPhone) profileUserPhone.textContent = phone || email || "Account active";
+
+    if (profileAvatar) {
+      profileAvatar.textContent = displayName.charAt(0).toUpperCase();
+    }
+  } else {
+    if (profileMenu) {
+      profileMenu.style.display = "none";
+    }
+
+    if (userName) userName.textContent = "Storage Manager";
+    if (userRole) userRole.textContent = "Admin";
+  }
+});
+
+const logoutBtn = document.getElementById("logoutBtn");
+
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", async () => {
+    try {
+      await firebase.auth().signOut();
+
+      const profileMenu = document.getElementById("userProfileMenu");
+
+      if (profileMenu) {
+        profileMenu.style.display = "none";
+      }
+
+      showToast("Logged out successfully");
+
+      navigate("dashboard");
+    } catch (error) {
+      console.error("Logout error:", error);
+      showToast("Logout failed. Please try again.");
+    }
+  });
+}
+
