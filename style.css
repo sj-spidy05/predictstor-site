@@ -67,3 +67,20 @@
   margin: 6px 4px 0 0;
   padding: 8px 12px;
 }
+@media (max-width: 768px) {
+  .cards-4 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .grid.two-col {
+    grid-template-columns: 1fr !important;
+  }
+
+  .card {
+    width: 100%;
+  }
+
+  .profile {
+    flex-wrap: wrap;
+  }
+}
