@@ -45,8 +45,12 @@ let farmerConfirmationResult = null;
 let farmerRecaptchaVerifier = null;
 
 farmerMenuBtn.addEventListener("click", () => {
-  farmerLoginPanel.style.display =
-    farmerLoginPanel.style.display === "none" ? "block" : "none";
+  const profileMenu = document.getElementById("userProfileMenu");
+
+  if (!profileMenu) return;
+
+  profileMenu.style.display =
+    profileMenu.style.display === "none" ? "block" : "none";
 });
 
 farmerCloseLoginBtn.addEventListener("click", () => {
