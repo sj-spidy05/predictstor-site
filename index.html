@@ -1,96 +1,1695 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PredicStor | Smart Onion Storage</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>
+    PredicStor | Smart Storage
+  </title>
+
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  >
+
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
 </head>
+
+
 <body>
+
+
+<!-- =====================================================
+     AUTH / LOGIN
+===================================================== -->
+
 <div id="authMenu">
-  <button id="menuBtn">⋮</button>
 
-  <div id="loginPanel" style="display:none;">
-    <h3>Farmer Login</h3>
+  <button
+    id="menuBtn"
+    type="button"
+    aria-label="Open login menu"
+  >
+    ⋮
+  </button>
 
-    <input type="tel" id="phoneNumber" placeholder="+91 9876543210">
 
-    <div id="recaptcha-container"></div>
+  <div
+    id="loginPanel"
+    style="display:none;"
+  >
 
-    <button id="sendOtpBtn">Send OTP</button>
+    <button
+      id="closeLoginBtn"
+      type="button"
+      aria-label="Close login"
+    >
+      ×
+    </button>
 
-    <div id="otpSection" style="display:none;">
-      <input type="text" id="otpCode" placeholder="Enter OTP">
-      <button id="verifyOtpBtn">Verify OTP</button>
+
+    <h3>
+      User Login
+    </h3>
+
+
+    <p>
+      Login using your registered mobile number.
+    </p>
+
+
+    <input
+      type="tel"
+      id="phoneNumber"
+      placeholder="+91 9876543210"
+      autocomplete="tel"
+    >
+
+
+    <div
+      id="recaptcha-container"
+    ></div>
+
+
+    <button
+      id="sendOtpBtn"
+      type="button"
+    >
+      Send OTP
+    </button>
+
+
+    <div
+      id="otpSection"
+      style="display:none;"
+    >
+
+      <input
+        type="text"
+        id="otpCode"
+        placeholder="Enter verification code"
+        inputmode="numeric"
+      >
+
+
+      <button
+        id="verifyOtpBtn"
+        type="button"
+      >
+        Verify & Login
+      </button>
+
     </div>
 
-    <button id="closeLoginBtn">Close</button>
   </div>
+
 </div>
-  <button> Enable SMS Alert </button> <aside class="sidebar">
-    <div class="brand"><div class="brand-mark">P</div><div><strong>PredicStor</strong><span>Smart Onion Storage</span></div></div>
-    <nav>
-      <button class="nav-item active" data-page="dashboard">⌂ <span>Dashboard</span></button>
-      <button class="nav-item" data-page="sensors">◉ <span>Live Sensors</span></button>
-      <button class="nav-item" data-page="prediction">⌁ <span>Prediction</span></button>
-      <button class="nav-item" data-page="alerts">⚠ <span>Alerts</span><b id="alertBadge">3</b></button>
-      <button class="nav-item" data-page="storage">  
- ▣ <span>Storage Batches</span></button>
-      <button class="nav-item" data-page="reports">▣ <span>Reports</span></button>
-      <button class="nav-item" data-page="controls">    ▤ <span>Automatic Control Status</span></button>
-    </nav>
-    <div class="sidebar-bottom">
-      <button class="nav-item" data-page="settings">  ⚙ <span>Settings</span></button>
-      <div class="system-card"><span class="pulse"></span><div><b>System Online</b><small>All sensors connected</small></div></div>
+
+
+
+<!-- =====================================================
+     SIDEBAR
+===================================================== -->
+
+<aside class="sidebar">
+
+  <div class="brand">
+
+    <div class="brand-mark">
+      P
     </div>
-  </aside>
 
-  <main class="main">
-    <header class="topbar">
-      <div><span class="eyebrow">DREAM - X / The NEXTGEN</span><h1 id="pageTitle">Storage Dashboard</h1></div>
-  <br><br><label>Mobile Number:</label> <input type="tel" placeholder 'Enter number'><button>Save Number   <div class="top-actions"><div class="live-dot"><i></i> Live</div><button class="icon-btn" id="notificationBtn">🔔<em>3</em></button><div class="profile" id="userProfile" style="cursor:pointer">
-  <div class="avatar">SK</div>
-  <div>
-    <b id="userName">Storage Manager</b>
-    <small id="userRole">Admin</small>
+
+    <div>
+
+      <strong>
+        PredicStor
+      </strong>
+
+      <span>
+        Smart Storage
+      </span>
+
+    </div>
+
   </div>
-</div>
 
-    <section id="dashboard" class="page active-page">
-      <div class="hero"><div><span class="tag">AI-POWERED STORAGE</span><h2>Protect every onion<br><span>from storage to market.</span></h2><p>PredicStor continuously monitors storage conditions and predicts spoilage risk before losses happen.</p></div><div class="hero-illustration"><div class="onion onion1">🧅</div><div class="onion onion2">🧅</div><div class="onion onion3">🧅</div><div class="scan-ring"></div></div></div>
-      <div class="grid cards-4">
-        <div class="metric-card"><div class="metric-icon temp">🌡</div><small>Temperature</small><strong id="tempVal">24.6°C</strong><span class="good">● Optimal range</span></div>
-        <div class="metric-card"><div class="metric-icon humid">💧</div><small>Humidity</small><strong id="humidVal">68%</strong><span class="good">● Optimal range</span></div>
-        <div class="metric-card"><div class="metric-icon gas">◌</div><small>Gas / Ethylene</small><strong id="gasVal">0.82 ppm</strong><span class="warn">● Watch level</span></div>
-        <div class="metric-card"><div class="metric-icon risk">⌁</div><small>Predicted Risk</small><strong id="riskVal">12%</strong><span class="good">● Low risk</span></div>
+
+
+  <nav>
+
+    <button
+      class="nav-item active"
+      data-page="dashboard"
+      type="button"
+    >
+      ⌂
+      <span>
+        Dashboard
+      </span>
+    </button>
+
+
+    <button
+      class="nav-item"
+      data-page="sensors"
+      type="button"
+    >
+      ◉
+      <span>
+        Live Sensors
+      </span>
+    </button>
+
+
+    <button
+      class="nav-item"
+      data-page="prediction"
+      type="button"
+    >
+      ⌁
+      <span>
+        Prediction
+      </span>
+    </button>
+
+
+    <button
+      class="nav-item"
+      data-page="alerts"
+      type="button"
+    >
+      ⚠
+
+      <span>
+        Alerts
+      </span>
+
+      <b id="alertBadge">
+        3
+      </b>
+
+    </button>
+
+
+    <button
+      class="nav-item"
+      data-page="storage"
+      type="button"
+    >
+      ▣
+
+      <span>
+        Storage Batches
+      </span>
+    </button>
+
+
+    <button
+      class="nav-item"
+      data-page="reports"
+      type="button"
+    >
+      ▤
+
+      <span>
+        Reports
+      </span>
+    </button>
+
+
+    <button
+      class="nav-item"
+      data-page="settings"
+      type="button"
+    >
+      ⚙
+
+      <span>
+        Settings
+      </span>
+    </button>
+
+  </nav>
+
+
+
+  <div class="sidebar-bottom">
+
+    <div class="system-card">
+
+      <span class="pulse"></span>
+
+
+      <div>
+
+        <b>
+          System Online
+        </b>
+
+        <small>
+          Monitoring system ready
+        </small>
+
       </div>
-      <div class="grid two-col">
-        <div class="panel"><div class="panel-head"><div><h3>Environmental Conditions</h3><small>Last 24 hours</small></div><select id="chartRange"><option>24 hours</option><option>7 days</option></select></div><canvas id="envChart" height="180"></canvas><div class="legend"><span><i></i> Temperature</span><span><i></i> Humidity</span><span><i></i> Safe zone</span></div></div>
-        <div class="panel"><div class="panel-head"><div><h3>Storage Health</h3><small>AI assessment</small></div><span class="health-score">88/100</span></div><div class="health-wrap"><div class="gauge"><div class="gauge-inner"><b>88%</b><small>Healthy</small></div></div><div class="health-list"><div><span class="ok">✓</span><p><b>Temperature</b><small>Within target</small></p></div><div><span class="ok">✓</span><p><b>Humidity</b><small>Within target</small></p></div><div><span class="attention">!</span><p><b>Gas concentration</b><small>Needs attention</small></p></div></div></div></div>
+
+    </div>
+
+  </div>
+
+</aside>
+
+
+
+<!-- =====================================================
+     MAIN
+===================================================== -->
+
+<main class="main">
+
+
+  <!-- TOPBAR -->
+
+  <header class="topbar">
+
+    <div>
+
+      <span class="eyebrow">
+        DREAM-X / THE NEXTGEN
+      </span>
+
+
+      <h1 id="pageTitle">
+        Storage Dashboard
+      </h1>
+
+    </div>
+
+
+
+    <div class="top-actions">
+
+      <div class="live-dot">
+
+        <i></i>
+
+        Live
+
       </div>
-      <div class="grid two-col">
-        <div class="panel"><div class="panel-head"><div><h3>AI Recommendation</h3><small>Generated just now</small></div><span class="ai-pill">✦ AI</span></div><div class="recommendation"><div class="rec-icon">💡</div><div><b>Increase ventilation for 10 minutes</b><p>Gas concentration is trending upward. A short ventilation cycle can reduce spoilage risk without affecting storage temperature.</p><button class="primary" id="ventBtn">Start Ventilation</button></div></div></div>
-        <div class="panel"><div class="panel-head"><div><h3>Recent Alerts</h3><small>Needs your attention</small></div><button class="text-btn" data-page="alerts">View all →</button></div><div id="recentAlerts"></div></div>
+
+
+      <button
+        class="icon-btn"
+        id="notificationBtn"
+        type="button"
+      >
+
+        🔔
+
+        <em>
+          3
+        </em>
+
+      </button>
+
+
+
+      <div
+        class="profile"
+        id="userProfile"
+      >
+
+        <div class="avatar">
+          GU
+        </div>
+
+
+        <div>
+
+          <b id="userName">
+            Guest User
+          </b>
+
+
+          <small id="userRole">
+            Not logged in
+          </small>
+
+        </div>
+
       </div>
-    </section>
 
-    <section id="sensors" class="page"><div class="section-intro"><span class="tag">REAL-TIME MONITORING</span><h2>Live Sensor Network</h2><p>Monitor every environmental parameter inside your onion storage structure.</p></div><div class="grid cards-4" id="sensorCards"></div><div class="panel"><div class="panel-head"><div><h3>Sensor Activity</h3><small>Last 60 minutes</small></div><span class="connected">● 6/6 connected</span></div><canvas id="sensorChart" height="230"></canvas></div></section>
+    </div>
 
-    <section id="prediction" class="page"><div class="section-intro"><span class="tag">PREDICTIVE INTELLIGENCE</span><h2>AI Spoilage Prediction</h2><p>Early warning based on environmental trends and storage history.</p></div><div class="prediction-hero"><div><small>Current batch</small><h3>ON-2026-0815</h3><p>Red Onion • 4.8 tonnes • Stored 15 Aug 2026</p></div><div class="risk-big"><span>Predicted spoilage risk</span><strong>12%</strong><small>Next 7 days</small></div></div><div class="grid two-col"><div class="panel"><div class="panel-head"><h3>Risk Forecast</h3><span class="ai-pill">✦ ML MODEL</span></div><canvas id="riskChart" height="240"></canvas></div><div class="panel"><div class="panel-head"><h3>Prediction Factors</h3></div><div class="factor"><div><b>Temperature stability</b><span>92%</span></div><div class="bar"><i style="width:92%"></i></div></div><div class="factor"><div><b>Humidity stability</b><span>86%</span></div><div class="bar"><i style="width:86%"></i></div></div><div class="factor"><div><b>Gas trend</b><span>71%</span></div><div class="bar"><i style="width:71%"></i></div></div><div class="factor"><div><b>Storage duration</b><span>94%</span></div><div class="bar"><i style="width:94%"></i></div></div><div class="prediction-note">✦ <b>Model confidence: 91%</b><br><small>The prediction updates whenever new sensor readings arrive.</small></div></div></div></section>
+  </header>
 
-    <section id="alerts" class="page"><div class="section-intro"><span class="tag">ATTENTION CENTER</span><h2>Alerts & Actions</h2><p>Prioritized notifications from your storage environment.</p></div><div class="alert-summary"><div><b>3</b><span>Active alerts</span></div><div><b>18</b><span>Resolved this month</span></div><div><b>0</b><span>Critical alerts</span></div></div><div class="panel"><div id="allAlerts"></div></div></section>
 
-    <section id="storage" class="page"><div class="section-intro"><span class="tag">INVENTORY</span><h2>Storage Batches</h2><p>Track onion batches, age, quantity and predicted condition.</p></div><div class="toolbar"><input id="batchSearch" placeholder="Search batch ID or variety…"/><button class="primary" id="newBatch">+ New Batch</button></div><div class="panel table-panel"><table><thead><tr><th>Batch ID</th><th>Variety</th><th>Quantity</th><th>Stored</th><th>Temperature</th><th>Risk</th><th>Status</th></tr></thead><tbody id="batchTable"></tbody></table></div></section>
 
-    <section id="reports" class="page"><div class="section-intro"><span class="tag">INSIGHTS</span><h2>Reports & Analytics</h2><p>Understand storage performance and prevented losses.</p></div><div class="grid cards-4"><div class="metric-card"><small>Onions monitored</small><strong>24.8 t</strong><span class="good">+8.4% this month</span></div><div class="metric-card"><small>Estimated loss prevented</small><strong>₹1.84L</strong><span class="good">AI-assisted savings</span></div><div class="metric-card"><small>Avg. storage life</small><strong>41 days</strong><span class="good">+6 days improvement</span></div><div class="metric-card"><small>System uptime</small><strong>99.2%</strong><span class="good">Excellent</span></div></div><div class="grid two-col"><div class="panel"><div class="panel-head"><h3>Monthly Loss Prevention</h3><span>2026</span></div><canvas id="reportChart" height="240"></canvas></div><div class="panel"><div class="panel-head"><h3>Download Report</h3></div><div class="download-card"><div class="file-icon">PDF</div><div><b>PredicStor Monthly Report</b><small>August 2026 • 2.4 MB</small></div><button class="primary" id="downloadBtn">Download</button></div><div class="download-card"><div class="file-icon">CSV</div><div><b>Sensor Data Export</b><small>Last 30 days • 842 KB</small></div><button class="secondary" id="csvBtn">Export</button></div></div></div></section>
+  <!-- =====================================================
+       DASHBOARD
+  ===================================================== -->
 
-    <section id="settings" class="page"><div class="section-intro"><span class="tag">CONFIGURATION</span><h2>Settings</h2><p>Configure storage thresholds and system preferences.</p></div><div class="panel settings-panel"><div class="setting-row"><div><b>Temperature threshold</b><small>Alert when temperature exceeds this value</small></div><input type="number" value="28"/> <span>°C</span></div><div class="setting-row"><div><b>Humidity threshold</b><small>Alert when humidity exceeds this value</small></div><input type="number" value="75"/> <span>%</span></div><div class="setting-row"><div><b>Gas alert level</b><small>Trigger early warning above this value</small></div><input type="number" value="1.00" step="0.01"/> <span>ppm</span></div><div class="setting-row"><div><b>Automatic ventilation</b><small>Allow system to act on AI recommendations</small></div><label class="switch"><input type="checkbox" checked><i></i></label></div><button class="primary" id="saveSettings">Save Changes</button></div></section>
-  </main>
-  <div class="toast" id="toast"></div>
+  <section
+    id="dashboard"
+    class="page active-page"
+  >
+
+
+    <div class="hero">
+
+      <div>
+
+        <span class="tag">
+          AI-POWERED STORAGE
+        </span>
+
+
+        <h2>
+
+          Protect your produce
+
+          <br>
+
+          <span>
+            from storage to market.
+          </span>
+
+        </h2>
+
+
+        <p>
+
+          PredicStor monitors storage conditions,
+          analyzes environmental data and helps
+          predict spoilage risk before losses happen.
+
+        </p>
+
+      </div>
+
+
+
+      <div class="hero-illustration">
+
+        <div class="onion onion1">
+          🧅
+        </div>
+
+        <div class="onion onion2">
+          🧅
+        </div>
+
+        <div class="onion onion3">
+          🧅
+        </div>
+
+        <div class="scan-ring"></div>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="grid cards-4">
+
+
+      <div class="metric-card">
+
+        <div class="metric-icon temp">
+          🌡
+        </div>
+
+        <small>
+          Temperature
+        </small>
+
+        <strong id="tempVal">
+          24.6°C
+        </strong>
+
+        <span class="good">
+          ● Optimal range
+        </span>
+
+      </div>
+
+
+
+      <div class="metric-card">
+
+        <div class="metric-icon humid">
+          💧
+        </div>
+
+        <small>
+          Humidity
+        </small>
+
+        <strong id="humidVal">
+          68%
+        </strong>
+
+        <span class="good">
+          ● Optimal range
+        </span>
+
+      </div>
+
+
+
+      <div class="metric-card">
+
+        <div class="metric-icon gas">
+          ◌
+        </div>
+
+        <small>
+          Gas / Ethylene
+        </small>
+
+        <strong id="gasVal">
+          0.82 ppm
+        </strong>
+
+        <span class="warn">
+          ● Watch level
+        </span>
+
+      </div>
+
+
+
+      <div class="metric-card">
+
+        <div class="metric-icon risk">
+          ⌁
+        </div>
+
+        <small>
+          Predicted Risk
+        </small>
+
+        <strong id="riskVal">
+          12%
+        </strong>
+
+        <span class="good">
+          ● Low risk
+        </span>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="grid two-col">
+
+
+      <div class="panel">
+
+        <div class="panel-head">
+
+          <div>
+
+            <h3>
+              Environmental Conditions
+            </h3>
+
+            <small>
+              Last 24 hours
+            </small>
+
+          </div>
+
+
+          <select id="chartRange">
+
+            <option>
+              24 hours
+            </option>
+
+            <option>
+              7 days
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <canvas
+          id="envChart"
+          height="180"
+        ></canvas>
+
+
+        <div class="legend">
+
+          <span>
+            <i></i>
+            Temperature
+          </span>
+
+          <span>
+            <i></i>
+            Humidity
+          </span>
+
+          <span>
+            <i></i>
+            Safe zone
+          </span>
+
+        </div>
+
+      </div>
+
+
+
+      <div class="panel">
+
+        <div class="panel-head">
+
+          <div>
+
+            <h3>
+              Storage Health
+            </h3>
+
+            <small>
+              AI assessment
+            </small>
+
+          </div>
+
+
+          <span class="health-score">
+            88/100
+          </span>
+
+        </div>
+
+
+
+        <div class="health-wrap">
+
+          <div class="gauge">
+
+            <div class="gauge-inner">
+
+              <b>
+                88%
+              </b>
+
+              <small>
+                Healthy
+              </small>
+
+            </div>
+
+          </div>
+
+
+
+          <div class="health-list">
+
+
+            <div>
+
+              <span class="ok">
+                ✓
+              </span>
+
+
+              <p>
+
+                <b>
+                  Temperature
+                </b>
+
+                <small>
+                  Within target
+                </small>
+
+              </p>
+
+            </div>
+
+
+
+            <div>
+
+              <span class="ok">
+                ✓
+              </span>
+
+
+              <p>
+
+                <b>
+                  Humidity
+                </b>
+
+                <small>
+                  Within target
+                </small>
+
+              </p>
+
+            </div>
+
+
+
+            <div>
+
+              <span class="attention">
+                !
+              </span>
+
+
+              <p>
+
+                <b>
+                  Gas concentration
+                </b>
+
+                <small>
+                  Needs attention
+                </small>
+
+              </p>
+
+            </div>
+
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="grid two-col">
+
+
+      <div class="panel">
+
+        <div class="panel-head">
+
+          <div>
+
+            <h3>
+              AI Recommendation
+            </h3>
+
+            <small>
+              Generated from current sensor data
+            </small>
+
+          </div>
+
+
+          <span class="ai-pill">
+            ✦ AI
+          </span>
+
+        </div>
+
+
+
+        <div class="recommendation">
+
+          <div class="rec-icon">
+            💡
+          </div>
+
+
+          <div>
+
+            <b>
+              Increase ventilation for 10 minutes
+            </b>
+
+
+            <p>
+
+              Gas concentration is trending upward.
+              A short ventilation cycle can reduce
+              spoilage risk.
+
+            </p>
+
+
+            <button
+              class="primary"
+              id="ventBtn"
+              type="button"
+            >
+              Start Ventilation
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+
+      <div class="panel">
+
+        <div class="panel-head">
+
+          <div>
+
+            <h3>
+              Recent Alerts
+            </h3>
+
+            <small>
+              Needs your attention
+            </small>
+
+          </div>
+
+
+          <button
+            class="text-btn"
+            data-page="alerts"
+            type="button"
+          >
+            View all →
+          </button>
+
+        </div>
+
+
+        <div id="recentAlerts"></div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+
+  <!-- =====================================================
+       LIVE SENSORS
+  ===================================================== -->
+
+  <section
+    id="sensors"
+    class="page"
+  >
+
+    <div class="section-intro">
+
+      <span class="tag">
+        REAL-TIME MONITORING
+      </span>
+
+
+      <h2>
+        Live Sensor Network
+      </h2>
+
+
+      <p>
+        Monitor environmental parameters
+        inside your storage facility.
+      </p>
+
+    </div>
+
+
+    <div
+      class="grid cards-4"
+      id="sensorCards"
+    ></div>
+
+
+    <div class="panel">
+
+      <div class="panel-head">
+
+        <div>
+
+          <h3>
+            Sensor Activity
+          </h3>
+
+          <small>
+            Last 60 minutes
+          </small>
+
+        </div>
+
+
+        <span class="connected">
+          ● Sensors ready
+        </span>
+
+      </div>
+
+
+      <canvas
+        id="sensorChart"
+        height="230"
+      ></canvas>
+
+    </div>
+
+  </section>
+
+
+
+  <!-- =====================================================
+       PREDICTION
+  ===================================================== -->
+
+  <section
+    id="prediction"
+    class="page"
+  >
+
+    <div class="section-intro">
+
+      <span class="tag">
+        PREDICTIVE INTELLIGENCE
+      </span>
+
+      <h2>
+        AI Spoilage Prediction
+      </h2>
+
+      <p>
+        Early warning based on environmental
+        trends and storage history.
+      </p>
+
+    </div>
+
+
+
+    <div class="prediction-hero">
+
+      <div>
+
+        <small>
+          Current batch
+        </small>
+
+        <h3>
+          ON-2026-0815
+        </h3>
+
+        <p>
+          Red Onion • 4.8 tonnes
+        </p>
+
+      </div>
+
+
+      <div class="risk-big">
+
+        <span>
+          Predicted spoilage risk
+        </span>
+
+        <strong>
+          12%
+        </strong>
+
+        <small>
+          Next 7 days
+        </small>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="grid two-col">
+
+
+      <div class="panel">
+
+        <div class="panel-head">
+
+          <h3>
+            Risk Forecast
+          </h3>
+
+          <span class="ai-pill">
+            ✦ AI MODEL
+          </span>
+
+        </div>
+
+
+        <canvas
+          id="riskChart"
+          height="240"
+        ></canvas>
+
+      </div>
+
+
+
+      <div class="panel">
+
+        <div class="panel-head">
+
+          <h3>
+            Prediction Factors
+          </h3>
+
+        </div>
+
+
+
+        <div class="factor">
+
+          <div>
+
+            <b>
+              Temperature stability
+            </b>
+
+            <span>
+              92%
+            </span>
+
+          </div>
+
+          <div class="bar">
+            <i style="width:92%"></i>
+          </div>
+
+        </div>
+
+
+
+        <div class="factor">
+
+          <div>
+
+            <b>
+              Humidity stability
+            </b>
+
+            <span>
+              86%
+            </span>
+
+          </div>
+
+          <div class="bar">
+            <i style="width:86%"></i>
+          </div>
+
+        </div>
+
+
+
+        <div class="factor">
+
+          <div>
+
+            <b>
+              Gas trend
+            </b>
+
+            <span>
+              71%
+            </span>
+
+          </div>
+
+          <div class="bar">
+            <i style="width:71%"></i>
+          </div>
+
+        </div>
+
+
+
+        <div class="factor">
+
+          <div>
+
+            <b>
+              Storage duration
+            </b>
+
+            <span>
+              94%
+            </span>
+
+          </div>
+
+          <div class="bar">
+            <i style="width:94%"></i>
+          </div>
+
+        </div>
+
+
+
+        <div class="prediction-note">
+
+          ✦
+
+          <b>
+            Model confidence: 91%
+          </b>
+
+          <br>
+
+          <small>
+            Prediction updates when
+            new sensor data arrives.
+          </small>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+
+  <!-- =====================================================
+       ALERTS
+  ===================================================== -->
+
+  <section
+    id="alerts"
+    class="page"
+  >
+
+    <div class="section-intro">
+
+      <span class="tag">
+        ATTENTION CENTER
+      </span>
+
+      <h2>
+        Alerts & Actions
+      </h2>
+
+      <p>
+        Prioritized notifications from
+        your storage environment.
+      </p>
+
+    </div>
+
+
+
+    <div class="alert-summary">
+
+      <div>
+
+        <b>
+          3
+        </b>
+
+        <span>
+          Active alerts
+        </span>
+
+      </div>
+
+
+      <div>
+
+        <b>
+          18
+        </b>
+
+        <span>
+          Resolved
+        </span>
+
+      </div>
+
+
+      <div>
+
+        <b>
+          0
+        </b>
+
+        <span>
+          Critical alerts
+        </span>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="panel">
+
+      <div id="allAlerts"></div>
+
+    </div>
+
+  </section>
+
+
+
+  <!-- =====================================================
+       STORAGE BATCHES
+  ===================================================== -->
+
+  <section
+    id="storage"
+    class="page"
+  >
+
+    <div class="section-intro">
+
+      <span class="tag">
+        INVENTORY
+      </span>
+
+      <h2>
+        Storage Batches
+      </h2>
+
+      <p>
+        Track stored produce,
+        quantity and predicted condition.
+      </p>
+
+    </div>
+
+
+
+    <div class="toolbar">
+
+      <input
+        id="batchSearch"
+        placeholder="Search batch ID or variety"
+      >
+
+
+      <button
+        class="primary"
+        id="newBatch"
+        type="button"
+      >
+        + New Batch
+      </button>
+
+    </div>
+
+
+
+    <div class="panel table-panel">
+
+      <table>
+
+        <thead>
+
+          <tr>
+
+            <th>
+              Batch ID
+            </th>
+
+            <th>
+              Variety
+            </th>
+
+            <th>
+              Quantity
+            </th>
+
+            <th>
+              Stored
+            </th>
+
+            <th>
+              Temperature
+            </th>
+
+            <th>
+              Risk
+            </th>
+
+            <th>
+              Status
+            </th>
+
+          </tr>
+
+        </thead>
+
+
+        <tbody
+          id="batchTable"
+        ></tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+
+
+  <!-- =====================================================
+       REPORTS
+  ===================================================== -->
+
+  <section
+    id="reports"
+    class="page"
+  >
+
+    <div class="section-intro">
+
+      <span class="tag">
+        INSIGHTS
+      </span>
+
+      <h2>
+        Reports & Analytics
+      </h2>
+
+      <p>
+        Understand storage performance
+        and predicted loss prevention.
+      </p>
+
+    </div>
+
+
+
+    <div class="grid cards-4">
+
+      <div class="metric-card">
+
+        <small>
+          Produce monitored
+        </small>
+
+        <strong>
+          24.8 t
+        </strong>
+
+        <span class="good">
+          System tracking active
+        </span>
+
+      </div>
+
+
+      <div class="metric-card">
+
+        <small>
+          Estimated loss prevented
+        </small>
+
+        <strong>
+          ₹1.84L
+        </strong>
+
+        <span class="good">
+          AI-assisted estimate
+        </span>
+
+      </div>
+
+
+      <div class="metric-card">
+
+        <small>
+          Avg. storage life
+        </small>
+
+        <strong>
+          41 days
+        </strong>
+
+        <span class="good">
+          Performance estimate
+        </span>
+
+      </div>
+
+
+      <div class="metric-card">
+
+        <small>
+          System uptime
+        </small>
+
+        <strong>
+          99.2%
+        </strong>
+
+        <span class="good">
+          System ready
+        </span>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="grid two-col">
+
+
+      <div class="panel">
+
+        <div class="panel-head">
+
+          <h3>
+            Monthly Loss Prevention
+          </h3>
+
+          <span>
+            2026
+          </span>
+
+        </div>
+
+
+        <canvas
+          id="reportChart"
+          height="240"
+        ></canvas>
+
+      </div>
+
+
+
+      <div class="panel">
+
+        <div class="panel-head">
+
+          <h3>
+            Download Report
+          </h3>
+
+        </div>
+
+
+
+        <div class="download-card">
+
+          <div class="file-icon">
+            PDF
+          </div>
+
+
+          <div>
+
+            <b>
+              PredicStor Monthly Report
+            </b>
+
+            <small>
+              Demo report
+            </small>
+
+          </div>
+
+
+          <button
+            class="primary"
+            id="downloadBtn"
+            type="button"
+          >
+            Download
+          </button>
+
+        </div>
+
+
+
+        <div class="download-card">
+
+          <div class="file-icon">
+            CSV
+          </div>
+
+
+          <div>
+
+            <b>
+              Sensor Data Export
+            </b>
+
+            <small>
+              Current sensor data
+            </small>
+
+          </div>
+
+
+          <button
+            class="secondary"
+            id="csvBtn"
+            type="button"
+          >
+            Export
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+
+  <!-- =====================================================
+       SETTINGS
+  ===================================================== -->
+
+  <section
+    id="settings"
+    class="page"
+  >
+
+    <div class="section-intro">
+
+      <span class="tag">
+        CONFIGURATION
+      </span>
+
+      <h2>
+        Settings
+      </h2>
+
+      <p>
+        Configure storage thresholds
+        and automation preferences.
+      </p>
+
+    </div>
+
+
+
+    <div class="panel settings-panel">
+
+
+      <div class="setting-row">
+
+        <div>
+
+          <b>
+            Temperature threshold
+          </b>
+
+          <small>
+            Alert when temperature
+            exceeds this value
+          </small>
+
+        </div>
+
+
+        <input
+          type="number"
+          value="28"
+        >
+
+        <span>
+          °C
+        </span>
+
+      </div>
+
+
+
+      <div class="setting-row">
+
+        <div>
+
+          <b>
+            Humidity threshold
+          </b>
+
+          <small>
+            Alert when humidity
+            exceeds this value
+          </small>
+
+        </div>
+
+
+        <input
+          type="number"
+          value="75"
+        >
+
+        <span>
+          %
+        </span>
+
+      </div>
+
+
+
+      <div class="setting-row">
+
+        <div>
+
+          <b>
+            Gas alert level
+          </b>
+
+          <small>
+            Trigger warning above
+            this value
+          </small>
+
+        </div>
+
+
+        <input
+          type="number"
+          value="1.00"
+          step="0.01"
+        >
+
+        <span>
+          ppm
+        </span>
+
+      </div>
+
+
+
+      <div class="setting-row">
+
+        <div>
+
+          <b>
+            Automatic ventilation
+          </b>
+
+          <small>
+            Allow automatic action
+            from AI recommendations
+          </small>
+
+        </div>
+
+
+        <label class="switch">
+
+          <input
+            type="checkbox"
+            checked
+          >
+
+          <i></i>
+
+        </label>
+
+      </div>
+
+
+
+      <button
+        class="primary"
+        id="saveSettings"
+        type="button"
+      >
+        Save Changes
+      </button>
+
+    </div>
+
+  </section>
+
+
+</main>
+
+
+
+<!-- TOAST -->
+
+<div
+  class="toast"
+  id="toast"
+></div>
+
+
+
+<!-- FIREBASE -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script></body>
-</html>  <script src="script.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+
+
+<!-- APP SCRIPT -->
+
+<script src="script.js"></script>
+
+
+</body>
+
+</html>
