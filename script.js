@@ -47,12 +47,25 @@ let farmerRecaptchaVerifier = null;
 farmerMenuBtn.addEventListener("click", () => {
   const profileMenu = document.getElementById("userProfileMenu");
 
-  if (!profileMenu) return;
+  if (firebase.auth().currentUser) {
+    if (!profileMenu) return;
 
-  profileMenu.style.display =
-    profileMenu.style.display === "none" ? "block" : "none";
+    profileMenu.style.display =
+      profileMenu.style.display === "none" ? "block" : "none";
+
+    if (farmerLoginPanel) {
+      farmerLoginPanel.style.display = "none";
+    }
+  } else {
+    if (profileMenu) {
+      profileMenu.style.display = "none";
+    }
+
+    if (farmerLoginPanel) {
+      farmerLoginPanel.style.display = "block";
+    }
+  }
 });
-
 farmerCloseLoginBtn.addEventListener("click", () => {
   farmerLoginPanel.style.display = "none";
 });
