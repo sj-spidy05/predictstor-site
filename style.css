@@ -904,3 +904,11 @@ th{
   }
 
 }
+/* Force Settings option to show on mobile */
+@media (max-width: 768px) {
+  .nav-item[data-page="settings"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+}
