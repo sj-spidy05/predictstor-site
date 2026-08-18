@@ -1,4 +1,3 @@
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyBxVrLZ0YYaGYcEjxL2gyDXKaudDyPNvZM",
   authDomain: "predictstor.firebaseapp.com",
@@ -8,177 +7,1207 @@ const firebaseConfig = {
   appId: "1:984193094318:web:5c5614bf83a431b98f133f",
   measurementId: "G-L254S3YZ5D"
 };
-firebase.initializeApp(firebaseConfig);
-const $=s=>document.querySelector(s); const $$=s=>document.querySelectorAll(s);
-const pages={dashboard:'Storage Dashboard',sensors:'Live Sensor Network',prediction:'AI Spoilage Prediction',alerts:'Alerts & Actions',storage:'Storage Batches',reports:'Reports & Analytics',settings:'Settings'};
-const alerts=[
- {level:'warning',title:'Gas concentration rising',time:'2 min ago',desc:'Ethylene level reached 0.82 ppm. Consider ventilation.'},
- {level:'info',title:'Sensor calibration completed',time:'34 min ago',desc:'All six environmental sensors are reporting normally.'},
- {level:'warning',title:'Humidity approaching threshold',time:'1 hr ago',desc:'Humidity increased by 3% over the last hour.'},
- {level:'good',title:'Temperature stabilized',time:'2 hr ago',desc:'Storage temperature returned to the optimal range.'}
+
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+
+const $ = selector => document.querySelector(selector);
+const $$ = selector => document.querySelectorAll(selector);
+
+const STORAGE_KEY = "predictstor_profile_v1";
+
+const pages = {
+  dashboard: "Storage Dashboard",
+  sensors: "Live Sensor Network",
+  prediction: "AI Spoilage Prediction",
+  alerts: "Alerts & Actions",
+  storage: "Storage Batches",
+  controls: "Automatic Control Status",
+  reports: "Reports & Analytics",
+  settings: "Settings"
+};
+
+let confirmationResult = null;
+let recaptchaVerifier = null;
+
+let sensorData = {
+  temperature: 24.6,
+  humidity: 68,
+  gas: 0.82,
+  airflow: 1.8,
+  battery: 86
+};
+
+let alerts = [
+  {
+    level: "warning",
+    title: "Gas concentration rising",
+    time: "2 min ago",
+    desc: "Gas level is approaching the configured watch range."
+  },
+  {
+    level: "info",
+    title: "Sensor system ready",
+    time: "34 min ago",
+    desc: "Demo sensor values are available until the physical device is connected."
+  },
+  {
+    level: "warning",
+    title: "Humidity monitoring",
+    time: "1 hr ago",
+    desc: "Humidity trend is being checked against the storage recommendation."
+  },
+  {
+    level: "good",
+    title: "System stabilized",
+    time: "2 hr ago",
+    desc: "Environmental values are currently within the demo target range."
+  }
 ];
-const batches=[['ON-2026-0815','Red Onion','4.8 t','15 Aug 2026','24.6°C','12%','Healthy'],['ON-2026-0812','Nashik Red','7.2 t','12 Aug 2026','25.1°C','18%','Healthy'],['ON-2026-0808','Bellary Onion','5.4 t','08 Aug 2026','27.4°C','31%','Watch'],['ON-2026-0801','White Onion','3.1 t','01 Aug 2026','26.8°C','24%','Healthy'],['ON-2026-0728','Red Onion','4.3 t','28 Jul 2026','28.2°C','46%','Watch']];
-function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600)}
-function navigate(page){$$('.page').forEach(p=>p.classList.remove('active-page'));$('#'+page).classList.add('active-page');$$('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===page));$('#pageTitle').textContent=pages[page];window.scrollTo({top:0,behavior:'smooth'});if(page==='sensors')drawSensorChart();if(page==='prediction')drawRiskChart();if(page==='reports')drawReportChart()}
-$$('.nav-item').forEach(n=>n.addEventListener('click',()=>navigate(n.dataset.page)));$$('[data-page]').forEach(n=>{if(!n.classList.contains('nav-item'))n.addEventListener('click',()=>navigate(n.dataset.page))});
-function lineChart(canvasId, datasets, labels){const c=document.getElementById(canvasId);if(!c)return;const ctx=c.getContext('2d'),w=c.width=c.clientWidth*devicePixelRatio,h=c.height=c.clientHeight*devicePixelRatio;ctx.scale(devicePixelRatio,devicePixelRatio);const W=c.clientWidth,H=c.clientHeight;ctx.clearRect(0,0,W,H);ctx.strokeStyle='#e9eee9';ctx.lineWidth=1;for(let i=0;i<5;i++){const y=18+i*(H-40)/4;ctx.beginPath();ctx.moveTo(35,y);ctx.lineTo(W-12,y);ctx.stroke()}datasets.forEach((ds,di)=>{ctx.beginPath();ds.forEach((v,i)=>{const x=35+i*(W-50)/(ds.length-1),y=18+(H-40)*(1-v/100);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.strokeStyle=di===0?'#3b8a56':'#8fb4ce';ctx.lineWidth=2;ctx.stroke();ds.forEach((v,i)=>{const x=35+i*(W-50)/(ds.length-1),y=18+(H-40)*(1-v/100);ctx.fillStyle=di===0?'#3b8a56':'#8fb4ce';ctx.beginPath();ctx.arc(x,y,2.5,0,Math.PI*2);ctx.fill()})});ctx.fillStyle='#8a958d';ctx.font='9px Inter';labels.forEach((l,i)=>ctx.fillText(l,35+i*(W-50)/(labels.length-1),H-5))}
-function drawEnv(){lineChart('envChart',[[52,55,58,61,60,58,62,64,61,59,57,60,62],[64,66,67,69,68,70,71,69,67,68,69,68,67]],['00','02','04','06','08','10','12','14','16','18','20','22','Now'])}
-function drawSensorChart(){lineChart('sensorChart',[[48,49,48,51,52,51,50,52,54,53,52,51,53,54,55,54,56,55],[61,62,62,63,64,63,64,65,66,65,67,66,65,66,67,68,67,68]],['-60m','-50m','-40m','-30m','-20m','-10m','Now'])}
-function drawRiskChart(){lineChart('riskChart',[[12,14,16,19,24,30,37,44]],['Now','Day 1','Day 2','Day 3','Day 4','Day 5','Day 6','Day 7'])}
-function drawReportChart(){lineChart('reportChart',[[30,42,39,51,57,68,76,84]],['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'])}
-function renderAlerts(){const html=alerts.map(a=>`<div class="alert-row"><div class="alert-icon">${a.level==='good'?'✓':a.level==='info'?'i':'!'}</div><div><b>${a.title}</b><small>${a.desc} • ${a.time}</small></div></div>`).join('');$('#recentAlerts').innerHTML=html;$('#allAlerts').innerHTML=alerts.map((a,i)=>`<div class="alert-row"><div class="alert-icon">${a.level==='good'?'✓':a.level==='info'?'i':'!'}</div><div style="flex:1"><b>${a.title}</b><small>${a.desc} • ${a.time}</small></div><button class="secondary" onclick="resolveAlert(${i})">${a.level==='good'?'Resolved':'Resolve'}</button></div>`).join('')}
-window.resolveAlert=i=>{alerts[i].level='good';alerts[i].title='Alert resolved';alerts[i].desc='Action completed successfully.';alerts[i].time='Just now';renderAlerts();showToast('Alert marked as resolved')};
-function renderBatches(filter=''){const q=filter.toLowerCase();$('#batchTable').innerHTML=batches.filter(r=>r.join(' ').toLowerCase().includes(q)).map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td><td><span class="status ${r[6]==='Healthy'?'good':'watch'}">${r[6]}</span></td></tr>`).join('')}
-function renderSensors(){const data=[['Temperature','24.6°C','Optimal','🌡'],['Humidity','68%','Optimal','💧'],['CO₂','412 ppm','Normal','◌'],['Ethylene','0.82 ppm','Watch','◉'],['Airflow','1.8 m/s','Normal','≋'],['Door status','Closed','Secure','▣']];$('#sensorCards').innerHTML=data.map(x=>`<div class="metric-card"><div class="metric-icon">${x[3]}</div><small>${x[0]}</small><strong>${x[1]}</strong><span class="${x[2]==='Watch'?'warn':'good'}">● ${x[2]}</span></div>`).join('')}
-$('#ventBtn').onclick=()=>{showToast('Ventilation cycle started • 10 minutes');$('#ventBtn').textContent='Ventilation Running';$('#ventBtn').disabled=true;setTimeout(()=>{$('#ventBtn').textContent='Start Ventilation';$('#ventBtn').disabled=false;showToast('Ventilation cycle completed')},5000)};
-$('#notificationBtn').onclick=()=>navigate('alerts');$('#newBatch').onclick=()=>showToast('New batch form ready for integration');$('#downloadBtn').onclick=()=>showToast('Report generation started');$('#csvBtn').onclick=()=>showToast('Sensor CSV export prepared');$('#saveSettings').onclick=()=>showToast('Settings saved successfully');$('#batchSearch').oninput=e=>renderBatches(e.target.value);$('#chartRange').onchange=e=>showToast('Chart range changed to '+e.target.value);
-renderAlerts();renderBatches();renderSensors();drawEnv();window.addEventListener('resize',()=>{drawEnv();if($('#sensors').classList.contains('active-page'))drawSensorChart()});
-setInterval(()=>{const t=(24+Math.random()*1.5).toFixed(1),h=Math.round(67+Math.random()*3),g=(.78+Math.random()*.12).toFixed(2);$('#tempVal').textContent=t+'°C';$('#humidVal').textContent=h+'%';$('#gasVal').textContent=g+' ppm'},5000);
-// Farmer Phone Login
-const farmerMenuBtn = document.getElementById("menuBtn");
-const farmerLoginPanel = document.getElementById("loginPanel");
-const farmerSendOtpBtn = document.getElementById("sendOtpBtn");
-const farmerVerifyOtpBtn = document.getElementById("verifyOtpBtn");
-const farmerCloseLoginBtn = document.getElementById("closeLoginBtn");
 
-let farmerConfirmationResult = null;
-let farmerRecaptchaVerifier = null;
+let batches = [
+  ["ON-2026-0815", "Red Onion", "4.8 t", "15 Aug 2026", "24.6°C", "68%", "Healthy"],
+  ["ON-2026-0812", "Nashik Red", "7.2 t", "12 Aug 2026", "25.1°C", "70%", "Healthy"],
+  ["ON-2026-0808", "Bellary Onion", "5.4 t", "08 Aug 2026", "27.4°C", "76%", "Watch"],
+  ["ON-2026-0801", "White Onion", "3.1 t", "01 Aug 2026", "26.8°C", "72%", "Healthy"]
+];
 
-farmerMenuBtn.addEventListener("click", () => {
-  const profileMenu = document.getElementById("userProfileMenu");
 
-  if (firebase.auth().currentUser) {
-    if (!profileMenu) return;
+/* ---------------------------------------------
+   BASIC HELPERS
+--------------------------------------------- */
 
-    profileMenu.style.display =
-      profileMenu.style.display === "none" ? "block" : "none";
+function showToast(message) {
+  const toast = $("#toast");
 
-    if (farmerLoginPanel) {
-      farmerLoginPanel.style.display = "none";
-    }
-  } else {
-    if (profileMenu) {
-      profileMenu.style.display = "none";
-    }
+  if (!toast) return;
 
-    if (farmerLoginPanel) {
-      farmerLoginPanel.style.display = "block";
-    }
+  toast.textContent = message;
+  toast.classList.add("show");
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2600);
+}
+
+function getProfile() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY));
+  } catch {
+    return null;
   }
-});
-farmerCloseLoginBtn.addEventListener("click", () => {
-  farmerLoginPanel.style.display = "none";
-});
+}
 
-farmerSendOtpBtn.addEventListener("click", async () => {
-  const phone = document.getElementById("phoneNumber").value.trim();
+function saveProfile(profile) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+}
 
-  if (!phone) {
-    alert("Please enter your mobile number.");
+function getInitials(value) {
+  if (!value) return "GU";
+
+  return value
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(word => word[0])
+    .join("")
+    .toUpperCase();
+}
+
+
+/* ---------------------------------------------
+   NAVIGATION
+--------------------------------------------- */
+
+function navigate(page) {
+  const target = document.getElementById(page);
+
+  if (!target) {
+    showToast("This page is not available.");
     return;
   }
 
-  try {
-    if (!farmerRecaptchaVerifier) {
-      farmerRecaptchaVerifier = new firebase.auth.RecaptchaVerifier(
-        "recaptcha-container",
-        { size: "normal" }
-      );
+  $$(".page").forEach(item => {
+    item.classList.remove("active-page");
+  });
 
-      await farmerRecaptchaVerifier.render();
-    }
+  target.classList.add("active-page");
 
-    farmerConfirmationResult =
-      await firebase.auth().signInWithPhoneNumber(
-        phone,
-        farmerRecaptchaVerifier
-      );
+  $$(".nav-item").forEach(item => {
+    item.classList.toggle("active", item.dataset.page === page);
+  });
 
-    document.getElementById("otpSection").style.display = "block";
-    alert("OTP sent to your mobile number.");
-  } catch (error) {
-    console.error(error);
-    alert("OTP send failed. Please check your number.");
+  if ($("#pageTitle")) {
+    $("#pageTitle").textContent = pages[page] || "PredicStor";
+  }
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+
+  if (page === "sensors") {
+    drawSensorChart();
+  }
+
+  if (page === "prediction") {
+    drawRiskChart();
+    updateOptimizationUI();
+  }
+
+  if (page === "reports") {
+    drawReportChart();
+  }
+}
+
+$$(".nav-item[data-page]").forEach(button => {
+  button.addEventListener("click", () => {
+    navigate(button.dataset.page);
+  });
+});
+
+$$("[data-page]").forEach(button => {
+  if (!button.classList.contains("nav-item")) {
+    button.addEventListener("click", () => {
+      navigate(button.dataset.page);
+    });
   }
 });
 
-farmerVerifyOtpBtn.addEventListener("click", async () => {
-  const otp = document.getElementById("otpCode").value.trim();
-
-  if (!farmerConfirmationResult) {
-    alert("First request an OTP.");
-    return;
-  }
-
-  try {
-    await farmerConfirmationResult.confirm(otp);
-    alert("Login successful!");
-    farmerLoginPanel.style.display = "none";
-  } catch (error) {
-    console.error(error);
-    alert("Invalid OTP. Please try again.");
-  }
-});
-// USER PROFILE + LOGOUT
-firebase.auth().onAuthStateChanged((user) => {
-  const profileMenu = document.getElementById("userProfileMenu");
-  const userName = document.getElementById("userName");
-  const userRole = document.getElementById("userRole");
-
-  const profileUserName = document.getElementById("profileUserName");
-  const profileUserRole = document.getElementById("profileUserRole");
-  const profileUserPhone = document.getElementById("profileUserPhone");
-  const profileAvatar = document.getElementById("profileAvatar");
-
-  if (user) {
-    if (farmerLoginPanel) {
-      farmerLoginPanel.style.display = "none";
-    }
-
-    const phone = user.phoneNumber || "";
-    const email = user.email || "";
-    const displayName = phone || email || "Logged in user";
-
-    if (userName) userName.textContent = displayName;
-    if (userRole) userRole.textContent = "Farmer";
-
-    if (profileUserName) profileUserName.textContent = displayName;
-    if (profileUserRole) profileUserRole.textContent = "Farmer";
-    if (profileUserPhone) profileUserPhone.textContent = phone || email || "Account active";
-
-    if (profileAvatar) {
-      profileAvatar.textContent = displayName.charAt(0).toUpperCase();
-    }
-  } else {
-    if (profileMenu) {
-      profileMenu.style.display = "none";
-    }
-
-    if (userName) userName.textContent = "Storage Manager";
-    if (userRole) userRole.textContent = "Admin";
-  }
+$("#notificationBtn")?.addEventListener("click", () => {
+  navigate("alerts");
 });
 
-const logoutBtn = document.getElementById("logoutBtn");
 
-if (logoutBtn) {
-  logoutBtn.addEventListener("click", async () => {
-    try {
-      await firebase.auth().signOut();
+/* ---------------------------------------------
+   CHARTS
+--------------------------------------------- */
 
-      const profileMenu = document.getElementById("userProfileMenu");
+function lineChart(canvasId, datasets, labels) {
+  const canvas = document.getElementById(canvasId);
 
-      if (profileMenu) {
-        profileMenu.style.display = "none";
+  if (!canvas) return;
+
+  const width = canvas.clientWidth;
+
+  if (!width) return;
+
+  const height = canvas.clientHeight || 240;
+  const ratio = window.devicePixelRatio || 1;
+
+  canvas.width = width * ratio;
+  canvas.height = height * ratio;
+
+  const ctx = canvas.getContext("2d");
+
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+
+  ctx.strokeStyle = "#e7ede9";
+  ctx.lineWidth = 1;
+
+  for (let i = 0; i < 5; i++) {
+    const y = 18 + i * (height - 45) / 4;
+
+    ctx.beginPath();
+    ctx.moveTo(35, y);
+    ctx.lineTo(width - 15, y);
+    ctx.stroke();
+  }
+
+  const colors = ["#13834b", "#7aa9c8", "#d69a22"];
+
+  datasets.forEach((dataset, datasetIndex) => {
+
+    ctx.beginPath();
+
+    dataset.forEach((value, index) => {
+      const x = 35 + index * (width - 50) / Math.max(dataset.length - 1, 1);
+
+      const y =
+        18 +
+        (height - 50) *
+        (1 - Math.max(0, Math.min(value, 100)) / 100);
+
+      if (index === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
       }
+    });
 
-      showToast("Logged out successfully");
+    ctx.strokeStyle = colors[datasetIndex % colors.length];
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
-      navigate("dashboard");
-    } catch (error) {
-      console.error("Logout error:", error);
-      showToast("Logout failed. Please try again.");
-    }
+  });
+
+  ctx.fillStyle = "#839088";
+  ctx.font = "10px Inter";
+
+  labels.forEach((label, index) => {
+    const x = 35 + index * (width - 50) / Math.max(labels.length - 1, 1);
+    ctx.fillText(label, x - 8, height - 5);
   });
 }
+
+function drawEnv() {
+  lineChart(
+    "envChart",
+    [
+      [52, 55, 58, 61, 60, 58, 62, 64, 61, 59, 57, 60, 62],
+      [64, 66, 67, 69, 68, 70, 71, 69, 67, 68, 69, 68, 67]
+    ],
+    ["00", "02", "04", "06", "08", "10", "12", "14", "16", "18", "20", "22", "Now"]
+  );
+}
+
+function drawSensorChart() {
+  lineChart(
+    "sensorChart",
+    [
+      [48, 49, 48, 51, 52, 51, 50, 52, 54, 53, 52, 51, 53],
+      [61, 62, 62, 63, 64, 63, 64, 65, 66, 65, 67, 66, 65]
+    ],
+    ["-60m", "-50m", "-40m", "-30m", "-20m", "-10m", "Now"]
+  );
+}
+
+function drawRiskChart() {
+  const profile = getProfile();
+
+  let risk = 12;
+
+  if (profile) {
+    risk = calculateRisk(profile);
+  }
+
+  lineChart(
+    "riskChart",
+    [
+      [
+        risk,
+        risk + 3,
+        risk + 5,
+        risk + 9,
+        risk + 13,
+        risk + 18,
+        risk + 23
+      ]
+    ],
+    ["Now", "D1", "D2", "D3", "D4", "D5", "D6"]
+  );
+}
+
+function drawReportChart() {
+  lineChart(
+    "reportChart",
+    [
+      [30, 42, 39, 51, 57, 68, 76, 84]
+    ],
+    ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"]
+  );
+}
+
+
+/* ---------------------------------------------
+   PRODUCT OPTIMIZATION
+--------------------------------------------- */
+
+function getRecommendation(product) {
+  const recommendations = {
+
+    Onion: {
+      temp: "0–4°C for refrigerated storage or controlled ambient storage depending on curing and storage method",
+      humidity: "65–75%",
+      gas: "Keep gas accumulation low with regular ventilation",
+      ventilation: "Moderate, dry airflow",
+      note: "Avoid excess moisture because sprouting and rot risk can increase."
+    },
+
+    Potato: {
+      temp: "4–10°C depending on intended use",
+      humidity: "90–95%",
+      gas: "Maintain fresh air exchange",
+      ventilation: "Moderate airflow",
+      note: "Avoid unsuitable temperatures that can affect quality."
+    },
+
+    Tomato: {
+      temp: "12–20°C depending on maturity",
+      humidity: "85–95%",
+      gas: "Monitor ripening gases",
+      ventilation: "Gentle airflow",
+      note: "Do not overcool immature tomatoes."
+    },
+
+    Carrot: {
+      temp: "0–4°C",
+      humidity: "90–95%",
+      gas: "Maintain clean air",
+      ventilation: "Low to moderate",
+      note: "High humidity helps reduce dehydration."
+    },
+
+    Cabbage: {
+      temp: "0–4°C",
+      humidity: "90–95%",
+      gas: "Fresh air circulation recommended",
+      ventilation: "Moderate",
+      note: "Avoid prolonged heat exposure."
+    },
+
+    Cauliflower: {
+      temp: "0–4°C",
+      humidity: "90–95%",
+      gas: "Fresh air recommended",
+      ventilation: "Moderate",
+      note: "Low temperature storage can extend quality."
+    },
+
+    Garlic: {
+      temp: "0–5°C or suitable dry ambient storage",
+      humidity: "60–70%",
+      gas: "Low accumulation",
+      ventilation: "Dry airflow",
+      note: "Dry conditions are important."
+    },
+
+    Apple: {
+      temp: "0–4°C",
+      humidity: "90–95%",
+      gas: "Ethylene monitoring is useful",
+      ventilation: "Controlled",
+      note: "Storage conditions depend on variety."
+    },
+
+    Other: {
+      temp: "Set after product-specific analysis",
+      humidity: "Set after product-specific analysis",
+      gas: "Monitor gas accumulation",
+      ventilation: "Maintain adequate airflow",
+      note: "Select a specific product profile for more accurate recommendations."
+    }
+
+  };
+
+  return recommendations[product] || recommendations.Other;
+}
+
+function calculateRisk(profile) {
+  const rec = getRecommendation(profile.product);
+
+  let risk = 8;
+
+  if (sensorData.temperature > 28) risk += 15;
+  if (sensorData.humidity > 80) risk += 12;
+  if (sensorData.gas > 1) risk += 10;
+
+  if (profile.product === "Tomato" && sensorData.temperature < 10) {
+    risk += 8;
+  }
+
+  return Math.min(risk, 95);
+}
+
+function updateOptimizationUI() {
+  const profile = getProfile();
+
+  if (!profile) {
+    $("#optimizationSummary").textContent =
+      "Configure your godown and product to receive storage recommendations.";
+
+    $("#predictionProduct").textContent = "Not configured";
+    $("#predictionLocation").textContent = "Location not configured";
+    $("#riskValue").textContent = "--";
+
+    $("#recommendationDetails").textContent =
+      "Configure a product to see recommended targets.";
+
+    return;
+  }
+
+  const recommendation = getRecommendation(profile.product);
+  const risk = calculateRisk(profile);
+
+  $("#heroProduct").textContent = profile.product;
+  $("#heroLocation").textContent = profile.location;
+
+  $("#predictionProduct").textContent = profile.product;
+  $("#predictionLocation").textContent =
+    `${profile.godownName} • ${profile.location}`;
+
+  $("#riskValue").textContent = `${risk}%`;
+
+  $("#optimizationSummary").innerHTML = `
+    <b>${profile.product} storage recommendation</b><br>
+    Location: ${profile.location}<br>
+    Current focus: ${recommendation.note}
+  `;
+
+  $("#recommendationDetails").innerHTML = `
+    <div>
+      <b>Temperature</b>
+      <span>${recommendation.temp}</span>
+    </div>
+
+    <div>
+      <b>Humidity</b>
+      <span>${recommendation.humidity}</span>
+    </div>
+
+    <div>
+      <b>Gas / Air Quality</b>
+      <span>${recommendation.gas}</span>
+    </div>
+
+    <div>
+      <b>Ventilation</b>
+      <span>${recommendation.ventilation}</span>
+    </div>
+
+    <div>
+      <b>Important Note</b>
+      <span>${recommendation.note}</span>
+    </div>
+  `;
+}
+
+
+/* ---------------------------------------------
+   PROFILE UI
+--------------------------------------------- */
+
+function updateProfileUI(user) {
+  const profile = getProfile();
+
+  const displayName =
+    profile?.name ||
+    user?.phoneNumber ||
+    "Guest User";
+
+  const phone =
+    user?.phoneNumber ||
+    profile?.phone ||
+    "Not logged in";
+
+  const initials = getInitials(displayName);
+
+  $("#userName").textContent = displayName;
+  $("#userRole").textContent =
+    user ? "Farmer" : "Not logged in";
+
+  $("#profileUserName").textContent = displayName;
+  $("#profileUserRole").textContent =
+    user ? "Farmer" : "Not logged in";
+
+  $("#profileUserPhone").textContent = phone;
+
+  $("#topAvatar").textContent = initials;
+  $("#profileAvatar").textContent = initials;
+
+  $("#profileGodownName").textContent =
+    profile?.godownName || "Not configured";
+
+  if (profile) {
+
+    $("#welcomeTitle").textContent =
+      `Welcome, ${profile.name}`;
+
+    $("#godownSummary").textContent =
+      `${profile.godownName} • ${profile.location} • ${profile.product}`;
+
+    $("#setupFromDashboard").textContent =
+      "Edit My Godown";
+
+    $("#pairedGodownId").textContent =
+      profile.godownId || "Not configured";
+
+    $("#pairedDeviceId").textContent =
+      profile.deviceId || "Not paired";
+
+    if (profile.deviceId) {
+      $("#deviceConnectionStatus").textContent =
+        `● Paired: ${profile.deviceId}`;
+
+      $("#systemStatus").textContent = "System Ready";
+      $("#systemSubStatus").textContent = "Device pairing saved";
+    }
+
+  } else {
+
+    $("#welcomeTitle").textContent =
+      user
+        ? "Complete your godown setup"
+        : "Your storage is ready";
+
+    $("#godownSummary").textContent =
+      user
+        ? "Add your godown details and stored product."
+        : "Login and configure your godown to begin monitoring.";
+
+    $("#setupFromDashboard").textContent =
+      user ? "Setup My Godown" : "Login to Setup";
+
+    $("#pairedGodownId").textContent = "Not configured";
+    $("#pairedDeviceId").textContent = "Not paired";
+  }
+
+  updateOptimizationUI();
+}
+
+
+/* ---------------------------------------------
+   LOGIN / USER MENU
+--------------------------------------------- */
+
+$("#menuBtn")?.addEventListener("click", () => {
+
+  const user = firebase.auth().currentUser;
+
+  if (user) {
+
+    $("#loginPanel").classList.add("hidden");
+
+    $("#userProfileMenu").classList.toggle("hidden");
+
+  } else {
+
+    $("#userProfileMenu").classList.add("hidden");
+
+    $("#loginPanel").classList.remove("hidden");
+
+  }
+
+});
+
+$("#closeLoginBtn")?.addEventListener("click", () => {
+  $("#loginPanel").classList.add("hidden");
+});
+
+$("#closeSetupBtn")?.addEventListener("click", () => {
+  $("#setupModal").classList.add("hidden");
+});
+
+
+/* ---------------------------------------------
+   FIREBASE OTP
+--------------------------------------------- */
+
+$("#sendOtpBtn")?.addEventListener("click", async () => {
+
+  const phone = $("#phoneNumber").value.trim();
+
+  if (!phone) {
+    showToast("Enter your mobile number.");
+    return;
+  }
+
+  try {
+
+    if (!recaptchaVerifier) {
+
+      recaptchaVerifier =
+        new firebase.auth.RecaptchaVerifier(
+          "recaptcha-container",
+          {
+            size: "normal"
+          }
+        );
+
+      await recaptchaVerifier.render();
+    }
+
+    confirmationResult =
+      await firebase.auth()
+        .signInWithPhoneNumber(
+          phone,
+          recaptchaVerifier
+        );
+
+    $("#otpSection").classList.remove("hidden");
+
+    showToast("OTP sent successfully.");
+
+  } catch (error) {
+
+    console.error(error);
+
+    showToast(
+      error.message || "OTP could not be sent."
+    );
+
+  }
+
+});
+
+
+$("#verifyOtpBtn")?.addEventListener("click", async () => {
+
+  const otp = $("#otpCode").value.trim();
+
+  if (!confirmationResult) {
+    showToast("Request OTP first.");
+    return;
+  }
+
+  if (!otp) {
+    showToast("Enter the verification code.");
+    return;
+  }
+
+  try {
+
+    const result =
+      await confirmationResult.confirm(otp);
+
+    $("#loginPanel").classList.add("hidden");
+    $("#otpSection").classList.add("hidden");
+
+    confirmationResult = null;
+
+    updateProfileUI(result.user);
+
+    const profile = getProfile();
+
+    if (!profile) {
+      openSetup();
+    }
+
+    showToast("Login successful.");
+
+  } catch (error) {
+
+    console.error(error);
+
+    showToast("Invalid OTP. Try again.");
+
+  }
+
+});
+
+
+/* ---------------------------------------------
+   PROFILE / GODOWN SETUP
+--------------------------------------------- */
+
+function openSetup() {
+
+  const user = firebase.auth().currentUser;
+
+  if (!user) {
+    $("#loginPanel").classList.remove("hidden");
+    return;
+  }
+
+  const profile = getProfile();
+
+  if (profile) {
+
+    $("#setupName").value = profile.name || "";
+    $("#setupUserId").value = profile.userId || "";
+    $("#setupGodownName").value = profile.godownName || "";
+    $("#setupGodownId").value = profile.godownId || "";
+    $("#setupLocation").value = profile.location || "";
+    $("#setupProduct").value = profile.product || "";
+
+  }
+
+  $("#setupModal").classList.remove("hidden");
+}
+
+$("#setupFromDashboard")?.addEventListener("click", () => {
+
+  if (!firebase.auth().currentUser) {
+    $("#loginPanel").classList.remove("hidden");
+    return;
+  }
+
+  openSetup();
+
+});
+
+$("#editProfileBtn")?.addEventListener("click", () => {
+
+  $("#userProfileMenu").classList.add("hidden");
+
+  openSetup();
+
+});
+
+
+$("#saveProfileBtn")?.addEventListener("click", () => {
+
+  const user = firebase.auth().currentUser;
+
+  if (!user) {
+    showToast("Login first.");
+    return;
+  }
+
+  const profile = {
+    name: $("#setupName").value.trim(),
+    userId: $("#setupUserId").value.trim(),
+    phone: user.phoneNumber || "",
+    godownName: $("#setupGodownName").value.trim(),
+    godownId: $("#setupGodownId").value.trim(),
+    location: $("#setupLocation").value.trim(),
+    product: $("#setupProduct").value,
+    deviceId: getProfile()?.deviceId || ""
+  };
+
+  if (
+    !profile.name ||
+    !profile.userId ||
+    !profile.godownName ||
+    !profile.godownId ||
+    !profile.location ||
+    !profile.product
+  ) {
+    showToast("Complete all profile and godown details.");
+    return;
+  }
+
+  saveProfile(profile);
+
+  $("#setupModal").classList.add("hidden");
+
+  updateProfileUI(user);
+
+  renderSensors();
+
+  showToast("Profile and godown saved.");
+
+});
+
+
+/* ---------------------------------------------
+   DEVICE PAIRING
+--------------------------------------------- */
+
+$("#pairDeviceBtn")?.addEventListener("click", () => {
+
+  const user = firebase.auth().currentUser;
+
+  if (!user) {
+    showToast("Login first.");
+    return;
+  }
+
+  const profile = getProfile();
+
+  if (!profile) {
+    showToast("Complete godown setup first.");
+    openSetup();
+    return;
+  }
+
+  const deviceId =
+    $("#deviceIdInput").value.trim();
+
+  if (!deviceId) {
+    showToast("Enter a device or Arduino ID.");
+    return;
+  }
+
+  profile.deviceId = deviceId;
+
+  saveProfile(profile);
+
+  updateProfileUI(user);
+
+  $("#deviceIdInput").value = "";
+
+  showToast(`Device ${deviceId} paired successfully.`);
+
+});
+
+
+/* ---------------------------------------------
+   LOGOUT
+--------------------------------------------- */
+
+$("#logoutBtn")?.addEventListener("click", async () => {
+
+  try {
+
+    await firebase.auth().signOut();
+
+    $("#userProfileMenu").classList.add("hidden");
+
+    updateProfileUI(null);
+
+    showToast("Logged out successfully.");
+
+    navigate("dashboard");
+
+  } catch (error) {
+
+    console.error(error);
+
+    showToast("Logout failed.");
+
+  }
+
+});
+
+
+firebase.auth().onAuthStateChanged(user => {
+
+  $("#userProfileMenu").classList.add("hidden");
+
+  updateProfileUI(user);
+
+});
+
+
+/* ---------------------------------------------
+   SENSOR UI
+--------------------------------------------- */
+
+function renderSensors() {
+
+  const profile = getProfile();
+
+  const paired =
+    Boolean(profile?.deviceId);
+
+  const data = [
+    ["Temperature", `${sensorData.temperature.toFixed(1)}°C`, "Optimal", "🌡"],
+    ["Humidity", `${Math.round(sensorData.humidity)}%`, "Monitoring", "💧"],
+    ["Gas Level", `${sensorData.gas.toFixed(2)} ppm`, "Monitoring", "◉"],
+    ["Airflow", `${sensorData.airflow.toFixed(1)} m/s`, "Normal", "≋"],
+    ["Battery", `${Math.round(sensorData.battery)}%`, "Solar Ready", "☀"],
+    [
+      "Device",
+      paired ? "Paired" : "Demo",
+      paired ? profile.deviceId : "Not connected",
+      "▣"
+    ]
+  ];
+
+  const sensorCards = $("#sensorCards");
+
+  if (!sensorCards) return;
+
+  sensorCards.innerHTML = data.map(item => `
+    <div class="metric-card">
+      <div style="font-size:22px;margin-bottom:7px">${item[3]}</div>
+      <small>${item[0]}</small>
+      <strong>${item[1]}</strong>
+      <span>${item[2]}</span>
+    </div>
+  `).join("");
+
+}
+
+
+/* ---------------------------------------------
+   DASHBOARD SENSOR VALUES
+--------------------------------------------- */
+
+function updateDashboardSensors() {
+
+  $("#tempVal").textContent =
+    `${sensorData.temperature.toFixed(1)}°C`;
+
+  $("#humidVal").textContent =
+    `${Math.round(sensorData.humidity)}%`;
+
+  $("#gasVal").textContent =
+    `${sensorData.gas.toFixed(2)} ppm`;
+
+  $("#airflowVal").textContent =
+    `${sensorData.airflow.toFixed(1)} m/s`;
+
+  $("#batteryValue").textContent =
+    `${Math.round(sensorData.battery)}%`;
+
+  $("#tempStatus").textContent =
+    sensorData.temperature > 28
+      ? "Watch temperature"
+      : "Optimal";
+
+  $("#humidStatus").textContent =
+    sensorData.humidity > 75
+      ? "Humidity watch"
+      : "Optimal";
+
+  $("#gasStatus").textContent =
+    sensorData.gas > 1
+      ? "Gas warning"
+      : "Normal";
+
+  $("#airflowStatus").textContent =
+    sensorData.airflow < 1
+      ? "Low airflow"
+      : "Normal";
+
+}
+
+
+/* ---------------------------------------------
+   ALERTS
+--------------------------------------------- */
+
+function renderAlerts() {
+
+  const recent = $("#recentAlerts");
+  const all = $("#allAlerts");
+
+  const buildAlert = alert => `
+    <div class="alert-row">
+
+      <div class="alert-icon">
+        ${alert.level === "good" ? "✓" :
+          alert.level === "info" ? "i" : "!"}
+      </div>
+
+      <div style="flex:1">
+        <b>${alert.title}</b>
+        <small>${alert.desc} • ${alert.time}</small>
+      </div>
+
+    </div>
+  `;
+
+  if (recent) {
+    recent.innerHTML =
+      alerts.slice(0, 4)
+        .map(buildAlert)
+        .join("");
+  }
+
+  if (all) {
+    all.innerHTML =
+      alerts
+        .map(buildAlert)
+        .join("");
+  }
+
+  const warningCount =
+    alerts.filter(item =>
+      item.level === "warning"
+    ).length;
+
+  if ($("#alertBadge")) {
+    $("#alertBadge").textContent =
+      warningCount;
+  }
+
+}
+
+
+/* ---------------------------------------------
+   BATCHES
+--------------------------------------------- */
+
+function renderBatches(filter = "") {
+
+  const table = $("#batchTable");
+
+  if (!table) return;
+
+  const query = filter.toLowerCase();
+
+  const rows =
+    batches.filter(row =>
+      row.join(" ")
+        .toLowerCase()
+        .includes(query)
+    );
+
+  table.innerHTML = rows.map(row => `
+    <tr>
+      <td><b>${row[0]}</b></td>
+      <td>${row[1]}</td>
+      <td>${row[2]}</td>
+      <td>${row[3]}</td>
+      <td>${row[4]}</td>
+      <td>${row[5]}</td>
+      <td>
+        <span class="status ${
+          row[6] === "Healthy"
+            ? "good"
+            : "watch"
+        }">
+          ${row[6]}
+        </span>
+      </td>
+    </tr>
+  `).join("");
+
+}
+
+$("#batchSearch")?.addEventListener("input", event => {
+  renderBatches(event.target.value);
+});
+
+$("#newBatch")?.addEventListener("click", () => {
+
+  const profile = getProfile();
+
+  if (!profile) {
+    showToast("Configure your godown first.");
+    return;
+  }
+
+  const batchNumber =
+    `PS-${Date.now().toString().slice(-6)}`;
+
+  batches.unshift([
+    batchNumber,
+    profile.product,
+    "1.0 t",
+    new Date().toLocaleDateString(),
+    `${sensorData.temperature.toFixed(1)}°C`,
+    `${Math.round(sensorData.humidity)}%`,
+    "Healthy"
+  ]);
+
+  renderBatches();
+
+  showToast("Demo batch added.");
+
+});
+
+
+/* ---------------------------------------------
+   CONTROL TEST
+--------------------------------------------- */
+
+$("#ventBtn")?.addEventListener("click", () => {
+
+  const button = $("#ventBtn");
+
+  if (button.disabled) return;
+
+  button.disabled = true;
+  button.textContent = "Ventilation Running";
+
+  $("#ventState").textContent = "Running";
+
+  showToast("Demo ventilation cycle started.");
+
+  setTimeout(() => {
+
+    button.disabled = false;
+    button.textContent = "Test Ventilation";
+
+    $("#ventState").textContent = "Standby";
+
+    showToast("Demo ventilation cycle completed.");
+
+  }, 5000);
+
+});
+
+
+/* ---------------------------------------------
+   SETTINGS
+--------------------------------------------- */
+
+$("#saveSettings")?.addEventListener("click", () => {
+
+  const settings = {
+    temp: $("#tempThreshold").value,
+    humidity: $("#humidityThreshold").value,
+    autoVentilation: $("#autoVentilation").checked
+  };
+
+  localStorage.setItem(
+    "predictstor_settings",
+    JSON.stringify(settings)
+  );
+
+  showToast("Settings saved.");
+
+});
+
+
+/* ---------------------------------------------
+   DOWNLOAD / EXPORT PLACEHOLDERS
+--------------------------------------------- */
+
+$("#downloadBtn")?.addEventListener("click", () => {
+  showToast("Report export will be connected later.");
+});
+
+$("#csvBtn")?.addEventListener("click", () => {
+  showToast("CSV export will be connected later.");
+});
+
+
+/* ---------------------------------------------
+   LIVE DEMO SENSOR SIMULATION
+   Replace this section later with real
+   Arduino / cloud sensor data.
+--------------------------------------------- */
+
+function simulateSensors() {
+
+  sensorData.temperature =
+    24 + Math.random() * 3;
+
+  sensorData.humidity =
+    66 + Math.random() * 8;
+
+  sensorData.gas =
+    0.7 + Math.random() * 0.4;
+
+  sensorData.airflow =
+    1.4 + Math.random() * 0.9;
+
+  sensorData.battery =
+    Math.max(
+      50,
+      Math.min(
+        100,
+        sensorData.battery +
+        (Math.random() * 2 - 1)
+      )
+    );
+
+  updateDashboardSensors();
+  renderSensors();
+
+  const profile = getProfile();
+
+  if (profile) {
+    updateOptimizationUI();
+  }
+
+}
+
+
+/* ---------------------------------------------
+   INITIALIZE
+--------------------------------------------- */
+
+renderAlerts();
+renderBatches();
+renderSensors();
+drawEnv();
+drawSensorChart();
+updateDashboardSensors();
+updateOptimizationUI();
+
+window.addEventListener("resize", () => {
+  drawEnv();
+
+  if ($("#sensors").classList.contains("active-page")) {
+    drawSensorChart();
+  }
+
+  if ($("#prediction").classList.contains("active-page")) {
+    drawRiskChart();
+  }
+
+  if ($("#reports").classList.contains("active-page")) {
+    drawReportChart();
+  }
+});
+
+setInterval(simulateSensors, 5000);
 
