@@ -1,189 +1,789 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PredicStor | Smart Storage</title>
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <title>
-    PredicStor | Smart Storage
-  </title>
-
-  <link
-    rel="preconnect"
-    href="https://fonts.googleapis.com"
-  >
-
-  <link
-    rel="preconnect"
-    href="https://fonts.gstatic.com"
-    crossorigin
-  >
-
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-    rel="stylesheet"
-  >
-
-  <link
-    rel="stylesheet"
-    href="style.css"
-  >
-  <style>
-#userProfileMenu {
-    position: absolute;
-    top: 70px;
-    right: 20px;
-    z-index: 9999;
-}
-
-.profile-menu-content {
-    background: #ffffff;
-    border: 1px solid #dfe7e1;
-    border-radius: 14px;
-    padding: 16px;
-    min-width: 220px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-}
-
-.profile-avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: #16823b;
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    margin-bottom: 10px;
-}
-
-.profile-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin-bottom: 14px;
-}
-
-.profile-info strong {
-    font-size: 16px;
-}
-
-.profile-info small {
-    color: #6b756d;
-}
-
-#logoutBtn {
-    width: 100%;
-    cursor: pointer;
-}
-</style>
+  <link rel="stylesheet" href="style.css">
 </head>
-
 
 <body>
 
+<div class="app">
 
-<!-- =====================================================
-     AUTH / LOGIN
-===================================================== -->
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
 
-<div id="authMenu">
+    <div class="brand">
+      <div class="brand-mark">P</div>
 
-  <button
-    id="menuBtn"
-    type="button"
-    aria-label="Open login menu"
-  >
-    ⋮
-  </button>
-<!-- USER PROFILE MENU -->
-<div id="userProfileMenu" style="display:none;">
-    <div class="profile-menu-content">
-        <div class="profile-avatar" id="profileAvatar">U</div>
+      <div>
+        <strong>PredicStor</strong>
+        <span>Smart Storage</span>
+      </div>
+    </div>
 
-        <div class="profile-info">
-            <strong id="profileUserName">User</strong>
-            <small id="profileUserRole">Farmer</small>
-            <small id="profileUserPhone">Not logged in</small>
+    <nav>
+
+      <button class="nav-item active" data-page="dashboard" type="button">
+        <span>⌂</span>
+        <span>Dashboard</span>
+      </button>
+
+      <button class="nav-item" data-page="sensors" type="button">
+        <span>◉</span>
+        <span>Live Sensors</span>
+      </button>
+
+      <button class="nav-item" data-page="prediction" type="button">
+        <span>⌁</span>
+        <span>Prediction</span>
+      </button>
+
+      <button class="nav-item" data-page="alerts" type="button">
+        <span>⚠</span>
+        <span>Alerts</span>
+        <b id="alertBadge">3</b>
+      </button>
+
+      <button class="nav-item" data-page="storage" type="button">
+        <span>▣</span>
+        <span>Storage Batches</span>
+      </button>
+
+      <button class="nav-item" data-page="controls" type="button">
+        <span>▤</span>
+        <span>Automatic Control</span>
+      </button>
+
+      <button class="nav-item" data-page="reports" type="button">
+        <span>▧</span>
+        <span>Reports</span>
+      </button>
+
+    </nav>
+
+    <div class="sidebar-bottom">
+
+      <button class="nav-item" data-page="settings" type="button">
+        <span>⚙</span>
+        <span>Settings</span>
+      </button>
+
+      <div class="system-card">
+        <span class="pulse"></span>
+
+        <div>
+          <b id="systemStatus">System Ready</b>
+          <small id="systemSubStatus">Demo mode</small>
+        </div>
+      </div>
+
+    </div>
+
+  </aside>
+
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+
+      <div>
+        <span class="eyebrow">DREAM - X / THE NEXTGEN</span>
+        <h1 id="pageTitle">Storage Dashboard</h1>
+      </div>
+
+      <div class="top-actions">
+
+        <div class="live-status">
+          <span class="live-dot"></span>
+          Live Monitoring
         </div>
 
-        <button
-            id="logoutBtn"
-            type="button"
-            class="secondary">
-            Logout
+        <button id="notificationBtn" class="icon-btn" type="button" aria-label="Alerts">
+          🔔
         </button>
-    </div>
+
+
+        <!-- USER MENU -->
+        <div class="user-menu-wrap">
+
+          <button
+            id="menuBtn"
+            class="icon-btn menu-btn"
+            type="button"
+            aria-label="User menu"
+          >
+            ⋮
+          </button>
+
+
+          <!-- LOGGED IN PROFILE -->
+          <div id="userProfileMenu" class="user-popup hidden">
+
+            <div class="user-popup-head">
+
+              <div class="avatar" id="profileAvatar">
+                GU
+              </div>
+
+              <div>
+                <b id="profileUserName">Guest User</b>
+                <small id="profileUserRole">Not logged in</small>
+              </div>
+
+            </div>
+
+            <div class="profile-detail">
+              <span>Mobile</span>
+              <b id="profileUserPhone">Not logged in</b>
+            </div>
+
+            <div class="profile-detail">
+              <span>Godown</span>
+              <b id="profileGodownName">Not configured</b>
+            </div>
+
+            <button id="editProfileBtn" class="secondary full-btn" type="button">
+              Edit Godown Profile
+            </button>
+
+            <button id="logoutBtn" class="logout-btn full-btn" type="button">
+              Logout
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <!-- TOP PROFILE -->
+        <div class="profile">
+
+          <div class="avatar" id="topAvatar">
+            GU
+          </div>
+
+          <div>
+            <b id="userName">Guest User</b>
+            <small id="userRole">Not logged in</small>
+          </div>
+
+        </div>
+
+      </div>
+
+    </header>
+
+
+    <!-- DASHBOARD -->
+    <section id="dashboard" class="page active-page">
+
+      <div class="hero">
+
+        <div>
+
+          <span class="tag">SMART STORAGE SYSTEM</span>
+
+          <h2 id="welcomeTitle">
+            Your storage is ready
+          </h2>
+
+          <p id="godownSummary">
+            Login and configure your godown to begin monitoring.
+          </p>
+
+          <button
+            id="setupFromDashboard"
+            class="primary"
+            type="button"
+          >
+            Setup My Godown
+          </button>
+
+        </div>
+
+        <div class="hero-card">
+
+          <small>Current Storage</small>
+
+          <strong id="heroProduct">
+            Not configured
+          </strong>
+
+          <span id="heroLocation">
+            Location not set
+          </span>
+
+        </div>
+
+      </div>
+
+
+      <div class="grid cards-4">
+
+        <div class="metric-card">
+          <small>Temperature</small>
+          <strong id="tempVal">--</strong>
+          <span id="tempStatus">Waiting for setup</span>
+        </div>
+
+        <div class="metric-card">
+          <small>Humidity</small>
+          <strong id="humidVal">--</strong>
+          <span id="humidStatus">Waiting for setup</span>
+        </div>
+
+        <div class="metric-card">
+          <small>Gas Level</small>
+          <strong id="gasVal">--</strong>
+          <span id="gasStatus">Waiting for setup</span>
+        </div>
+
+        <div class="metric-card">
+          <small>Airflow</small>
+          <strong id="airflowVal">--</strong>
+          <span id="airflowStatus">Waiting for setup</span>
+        </div>
+
+      </div>
+
+
+      <div class="grid two-col">
+
+        <div class="panel">
+
+          <div class="panel-head">
+            <div>
+              <h3>Environment Overview</h3>
+              <small>Simulated until hardware is connected</small>
+            </div>
+
+            <span class="connected" id="deviceConnectionStatus">
+              ● Device not paired
+            </span>
+          </div>
+
+          <canvas id="envChart" height="240"></canvas>
+
+        </div>
+
+
+        <div class="panel">
+
+          <div class="panel-head">
+            <div>
+              <h3>Storage Optimization</h3>
+              <small>Product + location recommendation</small>
+            </div>
+          </div>
+
+          <div id="optimizationSummary" class="recommendation-box">
+            Configure your godown and storage product to receive recommendations.
+          </div>
+
+          <button
+            class="primary"
+            data-page="prediction"
+            type="button"
+          >
+            View Analysis
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <div class="panel">
+
+        <div class="panel-head">
+          <div>
+            <h3>Recent Alerts</h3>
+            <small>Latest storage events</small>
+          </div>
+
+          <button class="secondary" data-page="alerts" type="button">
+            View All
+          </button>
+        </div>
+
+        <div id="recentAlerts"></div>
+
+      </div>
+
+    </section>
+
+
+    <!-- LIVE SENSORS -->
+    <section id="sensors" class="page">
+
+      <div class="section-intro">
+        <span class="tag">REAL-TIME MONITORING</span>
+        <h2>Live Sensor Network</h2>
+        <p>Pair your future Arduino/device with this godown.</p>
+      </div>
+
+
+      <div class="grid cards-4" id="sensorCards"></div>
+
+
+      <div class="grid two-col">
+
+        <div class="panel">
+
+          <div class="panel-head">
+            <div>
+              <h3>Device Pairing Portal</h3>
+              <small>Use this setup when your board is ready.</small>
+            </div>
+          </div>
+
+
+          <div class="device-info">
+
+            <div>
+              <span>Godown ID</span>
+              <b id="pairedGodownId">Not configured</b>
+            </div>
+
+            <div>
+              <span>Device ID</span>
+              <b id="pairedDeviceId">Not paired</b>
+            </div>
+
+          </div>
+
+
+          <label>Device / Arduino ID</label>
+
+          <input
+            id="deviceIdInput"
+            type="text"
+            placeholder="Example: PS-UNO-001"
+          >
+
+          <button id="pairDeviceBtn" class="primary" type="button">
+            Pair Device
+          </button>
+
+
+          <p class="hint">
+            Demo version: pairing is saved locally. Later this ID can be mapped to your Arduino/ESP cloud data source.
+          </p>
+
+        </div>
+
+
+        <div class="panel">
+
+          <div class="panel-head">
+            <div>
+              <h3>Hardware Plan</h3>
+              <small>Ready for future connection</small>
+            </div>
+          </div>
+
+          <div class="hardware-list">
+
+            <div>
+              <b>Temperature</b>
+              <span>DHT22 / DS18B20</span>
+            </div>
+
+            <div>
+              <b>Humidity</b>
+              <span>DHT22</span>
+            </div>
+
+            <div>
+              <b>Gas</b>
+              <span>MQ series / suitable calibrated sensor</span>
+            </div>
+
+            <div>
+              <b>Airflow</b>
+              <span>Airflow sensor / fan status</span>
+            </div>
+
+            <div>
+              <b>Controller</b>
+              <span>Arduino Uno for prototype</span>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="panel">
+
+        <div class="panel-head">
+          <div>
+            <h3>Sensor Activity</h3>
+            <small>Demo sensor trend</small>
+          </div>
+
+          <span class="connected">
+            ● Monitoring ready
+          </span>
+        </div>
+
+        <canvas id="sensorChart" height="240"></canvas>
+
+      </div>
+
+    </section>
+
+
+    <!-- PREDICTION -->
+    <section id="prediction" class="page">
+
+      <div class="section-intro">
+        <span class="tag">PREDICTIVE INTELLIGENCE</span>
+        <h2>Storage Optimization & Spoilage Prediction</h2>
+        <p>Recommendations are calculated from product profile and environmental readings.</p>
+      </div>
+
+
+      <div class="prediction-hero">
+
+        <div>
+          <small>Configured Product</small>
+          <h3 id="predictionProduct">Not configured</h3>
+          <p id="predictionLocation">Location not configured</p>
+        </div>
+
+        <div class="risk-big">
+          <span>Predicted Risk</span>
+          <strong id="riskValue">--</strong>
+          <small>Demo estimate</small>
+        </div>
+
+      </div>
+
+
+      <div class="grid two-col">
+
+        <div class="panel">
+
+          <div class="panel-head">
+            <h3>Risk Trend</h3>
+          </div>
+
+          <canvas id="riskChart" height="240"></canvas>
+
+        </div>
+
+
+        <div class="panel">
+
+          <div class="panel-head">
+            <h3>Recommended Conditions</h3>
+          </div>
+
+          <div id="recommendationDetails" class="recommendation-list">
+            Configure a product to see recommended targets.
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ALERTS -->
+    <section id="alerts" class="page">
+
+      <div class="section-intro">
+        <span class="tag">ALERTS & ACTIONS</span>
+        <h2>Alerts</h2>
+        <p>Important storage events and recommended actions.</p>
+      </div>
+
+      <div class="panel">
+        <div id="allAlerts"></div>
+      </div>
+
+    </section>
+
+
+    <!-- STORAGE -->
+    <section id="storage" class="page">
+
+      <div class="section-intro">
+        <span class="tag">STORAGE MANAGEMENT</span>
+        <h2>Storage Batches</h2>
+        <p>Manage stored products and batches.</p>
+      </div>
+
+
+      <div class="panel">
+
+        <div class="panel-head">
+
+          <input
+            id="batchSearch"
+            type="search"
+            placeholder="Search batches"
+          >
+
+          <button id="newBatch" class="primary" type="button">
+            Add Demo Batch
+          </button>
+
+        </div>
+
+
+        <div class="table-wrap">
+
+          <table>
+
+            <thead>
+              <tr>
+                <th>Batch ID</th>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Date</th>
+                <th>Temperature</th>
+                <th>Humidity</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+
+            <tbody id="batchTable"></tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- AUTOMATIC CONTROL -->
+    <section id="controls" class="page">
+
+      <div class="section-intro">
+        <span class="tag">AUTOMATIC CONTROL</span>
+        <h2>Automatic Control Status</h2>
+        <p>Recommended actions based on current environmental conditions.</p>
+      </div>
+
+
+      <div class="grid cards-4">
+
+        <div class="metric-card">
+          <small>Ventilation</small>
+          <strong id="ventState">Standby</strong>
+          <span>Automatic mode ready</span>
+        </div>
+
+        <div class="metric-card">
+          <small>Cooling / Heat</small>
+          <strong id="thermalState">Monitoring</strong>
+          <span>Target based</span>
+        </div>
+
+        <div class="metric-card">
+          <small>Solar System</small>
+          <strong>Ready</strong>
+          <span>Demo monitoring</span>
+        </div>
+
+        <div class="metric-card">
+          <small>Battery</small>
+          <strong id="batteryValue">86%</strong>
+          <span>Estimated charge</span>
+        </div>
+
+      </div>
+
+
+      <div class="panel">
+
+        <div class="panel-head">
+          <div>
+            <h3>Manual Test Control</h3>
+            <small>Demo only until hardware relay control is connected.</small>
+          </div>
+        </div>
+
+        <button id="ventBtn" class="primary" type="button">
+          Test Ventilation
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- REPORTS -->
+    <section id="reports" class="page">
+
+      <div class="section-intro">
+        <span class="tag">ANALYTICS</span>
+        <h2>Reports & Analytics</h2>
+        <p>Storage performance overview.</p>
+      </div>
+
+
+      <div class="grid cards-4">
+
+        <div class="metric-card">
+          <small>Total Storage</small>
+          <strong>24.8 t</strong>
+          <span class="good">Demo data</span>
+        </div>
+
+        <div class="metric-card">
+          <small>Loss Prevented</small>
+          <strong>₹1.84L</strong>
+          <span class="good">Estimated</span>
+        </div>
+
+        <div class="metric-card">
+          <small>Avg. Storage Life</small>
+          <strong>41 days</strong>
+          <span class="good">Demo</span>
+        </div>
+
+        <div class="metric-card">
+          <small>System Uptime</small>
+          <strong>99.2%</strong>
+          <span class="good">Demo</span>
+        </div>
+
+      </div>
+
+
+      <div class="panel">
+
+        <div class="panel-head">
+          <h3>Monthly Trend</h3>
+        </div>
+
+        <canvas id="reportChart" height="240"></canvas>
+
+      </div>
+
+    </section>
+
+
+    <!-- SETTINGS -->
+    <section id="settings" class="page">
+
+      <div class="section-intro">
+        <span class="tag">CONFIGURATION</span>
+        <h2>Settings</h2>
+        <p>Configure your local demo thresholds.</p>
+      </div>
+
+
+      <div class="panel settings-panel">
+
+        <div class="setting-row">
+
+          <div>
+            <b>Temperature threshold</b>
+            <small>Alert when temperature exceeds this value</small>
+          </div>
+
+          <input id="tempThreshold" type="number" value="28">
+          <span>°C</span>
+
+        </div>
+
+
+        <div class="setting-row">
+
+          <div>
+            <b>Humidity threshold</b>
+            <small>Alert when humidity exceeds this value</small>
+          </div>
+
+          <input id="humidityThreshold" type="number" value="75">
+          <span>%</span>
+
+        </div>
+
+
+        <div class="setting-row">
+
+          <div>
+            <b>Automatic ventilation</b>
+            <small>Enable automatic recommendation mode</small>
+          </div>
+
+          <label class="switch">
+            <input id="autoVentilation" type="checkbox" checked>
+            <i></i>
+          </label>
+
+        </div>
+
+
+        <button id="saveSettings" class="primary" type="button">
+          Save Settings
+        </button>
+
+      </div>
+
+    </section>
+
+  </main>
+
 </div>
 
-  <div
-    id="loginPanel"
-    style="display:none;"
-  >
 
-    <button
-      id="closeLoginBtn"
-      type="button"
-      aria-label="Close login"
-    >
+<!-- LOGIN MODAL -->
+<div id="loginPanel" class="modal hidden">
+
+  <div class="modal-card">
+
+    <button id="closeLoginBtn" class="modal-close" type="button">
       ×
     </button>
 
-
-    <h3>
-      User Login
-    </h3>
-
+    <h2>Farmer Login</h2>
 
     <p>
-      Login using your registered mobile number.
+      Enter your registered mobile number.
     </p>
 
-
     <input
-      type="tel"
       id="phoneNumber"
+      type="tel"
       placeholder="+91 9876543210"
-      autocomplete="tel"
     >
 
+    <div id="recaptcha-container"></div>
 
-    <div
-      id="recaptcha-container"
-    ></div>
-
-
-    <button
-      id="sendOtpBtn"
-      type="button"
-    >
+    <button id="sendOtpBtn" class="primary full-btn" type="button">
       Send OTP
     </button>
 
-
-    <div
-      id="otpSection"
-      style="display:none;"
-    >
+    <div id="otpSection" class="hidden">
 
       <input
-        type="text"
         id="otpCode"
+        type="text"
         placeholder="Enter verification code"
         inputmode="numeric"
       >
 
-
-      <button
-        id="verifyOtpBtn"
-        type="button"
-      >
+      <button id="verifyOtpBtn" class="primary full-btn" type="button">
         Verify & Login
       </button>
 
@@ -194,1570 +794,91 @@
 </div>
 
 
+<!-- FIRST TIME PROFILE -->
+<div id="setupModal" class="modal hidden">
 
-<!-- =====================================================
-     SIDEBAR
-===================================================== -->
+  <div class="modal-card setup-card">
 
-<aside class="sidebar">
+    <button id="closeSetupBtn" class="modal-close" type="button">
+      ×
+    </button>
 
-  <div class="brand">
+    <h2>Setup Your Profile & Godown</h2>
 
-    <div class="brand-mark">
-      P
+    <p class="hint">
+      These details are saved locally for the demo version.
+    </p>
+
+
+    <div class="form-grid">
+
+      <div>
+        <label>Farmer / Owner Name</label>
+        <input id="setupName" type="text" placeholder="Enter name">
+      </div>
+
+      <div>
+        <label>User ID</label>
+        <input id="setupUserId" type="text" placeholder="Example: FARMER001">
+      </div>
+
+      <div>
+        <label>Godown Name</label>
+        <input id="setupGodownName" type="text" placeholder="Example: Madurai Storage 01">
+      </div>
+
+      <div>
+        <label>Godown ID</label>
+        <input id="setupGodownId" type="text" placeholder="Example: GD-MDU-001">
+      </div>
+
+      <div>
+        <label>Location</label>
+        <input id="setupLocation" type="text" placeholder="City / District">
+      </div>
+
+      <div>
+        <label>Stored Product</label>
+
+        <select id="setupProduct">
+
+          <option value="">Select product</option>
+
+          <option value="Onion">Onion</option>
+          <option value="Potato">Potato</option>
+          <option value="Tomato">Tomato</option>
+          <option value="Carrot">Carrot</option>
+          <option value="Cabbage">Cabbage</option>
+          <option value="Cauliflower">Cauliflower</option>
+          <option value="Garlic">Garlic</option>
+          <option value="Apple">Apple</option>
+          <option value="Other">Other suitable produce</option>
+
+        </select>
+
+      </div>
+
     </div>
 
 
-    <div>
-
-      <strong>
-        PredicStor
-      </strong>
-
-      <span>
-        Smart Storage
-      </span>
-
-    </div>
+    <button id="saveProfileBtn" class="primary full-btn" type="button">
+      Save Profile & Godown
+    </button>
 
   </div>
 
+</div>
 
 
-  <nav>
-
-    <button
-      class="nav-item active"
-      data-page="dashboard"
-      type="button"
-    >
-      ⌂
-      <span>
-        Dashboard
-      </span>
-    </button>
-
-
-    <button
-      class="nav-item"
-      data-page="sensors"
-      type="button"
-    >
-      ◉
-      <span>
-        Live Sensors
-      </span>
-    </button>
-
-
-    <button
-      class="nav-item"
-      data-page="prediction"
-      type="button"
-    >
-      ⌁
-      <span>
-        Prediction
-      </span>
-    </button>
-
-
-    <button
-      class="nav-item"
-      data-page="alerts"
-      type="button"
-    >
-      ⚠
-
-      <span>
-        Alerts
-      </span>
-
-      <b id="alertBadge">
-        3
-      </b>
-
-    </button>
-
-
-    <button
-      class="nav-item"
-      data-page="storage"
-      type="button"
-    >
-      ▣
-
-      <span>
-        Storage Batches
-      </span>
-    </button>
-
-
-    <button
-      class="nav-item"
-      data-page="reports"
-      type="button"
-    >
-      ▤
-
-      <span>
-        Reports
-      </span>
-    </button>
-
-
-    <button
-      class="nav-item"
-      data-page="settings"
-      type="button"
-    >
-      ⚙
-
-      <span>
-        Settings
-      </span>
-    </button>
-
-  </nav>
-
-
-
-  <div class="sidebar-bottom">
-
-    <div class="system-card">
-
-      <span class="pulse"></span>
-
-
-      <div>
-
-        <b>
-          System Online
-        </b>
-
-        <small>
-          Monitoring system ready
-        </small>
-
-      </div>
-
-    </div>
-
-  </div>
-
-</aside>
-
-
-
-<!-- =====================================================
-     MAIN
-===================================================== -->
-
-<main class="main">
-
-
-  <!-- TOPBAR -->
-
-  <header class="topbar">
-
-    <div>
-
-      <span class="eyebrow">
-        DREAM-X / THE NEXTGEN
-      </span>
-
-
-      <h1 id="pageTitle">
-        Storage Dashboard
-      </h1>
-
-    </div>
-
-
-
-    <div class="top-actions">
-
-      <div class="live-dot">
-
-        <i></i>
-
-        Live
-
-      </div>
-
-
-      <button
-        class="icon-btn"
-        id="notificationBtn"
-        type="button"
-      >
-
-        🔔
-
-        <em>
-          3
-        </em>
-
-      </button>
-
-
-
-      <div
-        class="profile"
-        id="userProfile"
-      >
-
-        <div class="avatar">
-          GU
-        </div>
-
-
-        <div>
-
-          <b id="userName">
-            Guest User
-          </b>
-
-
-          <small id="userRole">
-            Not logged in
-          </small>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </header>
-
-
-
-  <!-- =====================================================
-       DASHBOARD
-  ===================================================== -->
-
-  <section
-    id="dashboard"
-    class="page active-page"
-  >
-
-
-    <div class="hero">
-
-      <div>
-
-        <span class="tag">
-          AI-POWERED STORAGE
-        </span>
-
-
-        <h2>
-
-          Protect your produce
-
-          <br>
-
-          <span>
-            from storage to market.
-          </span>
-
-        </h2>
-
-
-        <p>
-
-          PredicStor monitors storage conditions,
-          analyzes environmental data and helps
-          predict spoilage risk before losses happen.
-
-        </p>
-
-      </div>
-
-
-
-      <div class="hero-illustration">
-
-        <div class="onion onion1">
-          🧅
-        </div>
-
-        <div class="onion onion2">
-          🧅
-        </div>
-
-        <div class="onion onion3">
-          🧅
-        </div>
-
-        <div class="scan-ring"></div>
-
-      </div>
-
-    </div>
-
-
-
-    <div class="grid cards-4">
-
-
-      <div class="metric-card">
-
-        <div class="metric-icon temp">
-          🌡
-        </div>
-
-        <small>
-          Temperature
-        </small>
-
-        <strong id="tempVal">
-          24.6°C
-        </strong>
-
-        <span class="good">
-          ● Optimal range
-        </span>
-
-      </div>
-
-
-
-      <div class="metric-card">
-
-        <div class="metric-icon humid">
-          💧
-        </div>
-
-        <small>
-          Humidity
-        </small>
-
-        <strong id="humidVal">
-          68%
-        </strong>
-
-        <span class="good">
-          ● Optimal range
-        </span>
-
-      </div>
-
-
-
-      <div class="metric-card">
-
-        <div class="metric-icon gas">
-          ◌
-        </div>
-
-        <small>
-          Gas / Ethylene
-        </small>
-
-        <strong id="gasVal">
-          0.82 ppm
-        </strong>
-
-        <span class="warn">
-          ● Watch level
-        </span>
-
-      </div>
-
-
-
-      <div class="metric-card">
-
-        <div class="metric-icon risk">
-          ⌁
-        </div>
-
-        <small>
-          Predicted Risk
-        </small>
-
-        <strong id="riskVal">
-          12%
-        </strong>
-
-        <span class="good">
-          ● Low risk
-        </span>
-
-      </div>
-
-    </div>
-
-
-
-    <div class="grid two-col">
-
-
-      <div class="panel">
-
-        <div class="panel-head">
-
-          <div>
-
-            <h3>
-              Environmental Conditions
-            </h3>
-
-            <small>
-              Last 24 hours
-            </small>
-
-          </div>
-
-
-          <select id="chartRange">
-
-            <option>
-              24 hours
-            </option>
-
-            <option>
-              7 days
-            </option>
-
-          </select>
-
-        </div>
-
-
-        <canvas
-          id="envChart"
-          height="180"
-        ></canvas>
-
-
-        <div class="legend">
-
-          <span>
-            <i></i>
-            Temperature
-          </span>
-
-          <span>
-            <i></i>
-            Humidity
-          </span>
-
-          <span>
-            <i></i>
-            Safe zone
-          </span>
-
-        </div>
-
-      </div>
-
-
-
-      <div class="panel">
-
-        <div class="panel-head">
-
-          <div>
-
-            <h3>
-              Storage Health
-            </h3>
-
-            <small>
-              AI assessment
-            </small>
-
-          </div>
-
-
-          <span class="health-score">
-            88/100
-          </span>
-
-        </div>
-
-
-
-        <div class="health-wrap">
-
-          <div class="gauge">
-
-            <div class="gauge-inner">
-
-              <b>
-                88%
-              </b>
-
-              <small>
-                Healthy
-              </small>
-
-            </div>
-
-          </div>
-
-
-
-          <div class="health-list">
-
-
-            <div>
-
-              <span class="ok">
-                ✓
-              </span>
-
-
-              <p>
-
-                <b>
-                  Temperature
-                </b>
-
-                <small>
-                  Within target
-                </small>
-
-              </p>
-
-            </div>
-
-
-
-            <div>
-
-              <span class="ok">
-                ✓
-              </span>
-
-
-              <p>
-
-                <b>
-                  Humidity
-                </b>
-
-                <small>
-                  Within target
-                </small>
-
-              </p>
-
-            </div>
-
-
-
-            <div>
-
-              <span class="attention">
-                !
-              </span>
-
-
-              <p>
-
-                <b>
-                  Gas concentration
-                </b>
-
-                <small>
-                  Needs attention
-                </small>
-
-              </p>
-
-            </div>
-
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-
-
-
-    <div class="grid two-col">
-
-
-      <div class="panel">
-
-        <div class="panel-head">
-
-          <div>
-
-            <h3>
-              AI Recommendation
-            </h3>
-
-            <small>
-              Generated from current sensor data
-            </small>
-
-          </div>
-
-
-          <span class="ai-pill">
-            ✦ AI
-          </span>
-
-        </div>
-
-
-
-        <div class="recommendation">
-
-          <div class="rec-icon">
-            💡
-          </div>
-
-
-          <div>
-
-            <b>
-              Increase ventilation for 10 minutes
-            </b>
-
-
-            <p>
-
-              Gas concentration is trending upward.
-              A short ventilation cycle can reduce
-              spoilage risk.
-
-            </p>
-
-
-            <button
-              class="primary"
-              id="ventBtn"
-              type="button"
-            >
-              Start Ventilation
-            </button>
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-
-      <div class="panel">
-
-        <div class="panel-head">
-
-          <div>
-
-            <h3>
-              Recent Alerts
-            </h3>
-
-            <small>
-              Needs your attention
-            </small>
-
-          </div>
-
-
-          <button
-            class="text-btn"
-            data-page="alerts"
-            type="button"
-          >
-            View all →
-          </button>
-
-        </div>
-
-
-        <div id="recentAlerts"></div>
-
-      </div>
-
-    </div>
-
-  </section>
-
-
-
-  <!-- =====================================================
-       LIVE SENSORS
-  ===================================================== -->
-
-  <section
-    id="sensors"
-    class="page"
-  >
-
-    <div class="section-intro">
-
-      <span class="tag">
-        REAL-TIME MONITORING
-      </span>
-
-
-      <h2>
-        Live Sensor Network
-      </h2>
-
-
-      <p>
-        Monitor environmental parameters
-        inside your storage facility.
-      </p>
-
-    </div>
-
-
-    <div
-      class="grid cards-4"
-      id="sensorCards"
-    ></div>
-
-
-    <div class="panel">
-
-      <div class="panel-head">
-
-        <div>
-
-          <h3>
-            Sensor Activity
-          </h3>
-
-          <small>
-            Last 60 minutes
-          </small>
-
-        </div>
-
-
-        <span class="connected">
-          ● Sensors ready
-        </span>
-
-      </div>
-
-
-      <canvas
-        id="sensorChart"
-        height="230"
-      ></canvas>
-
-    </div>
-
-  </section>
-
-
-
-  <!-- =====================================================
-       PREDICTION
-  ===================================================== -->
-
-  <section
-    id="prediction"
-    class="page"
-  >
-
-    <div class="section-intro">
-
-      <span class="tag">
-        PREDICTIVE INTELLIGENCE
-      </span>
-
-      <h2>
-        AI Spoilage Prediction
-      </h2>
-
-      <p>
-        Early warning based on environmental
-        trends and storage history.
-      </p>
-
-    </div>
-
-
-
-    <div class="prediction-hero">
-
-      <div>
-
-        <small>
-          Current batch
-        </small>
-
-        <h3>
-          ON-2026-0815
-        </h3>
-
-        <p>
-          Red Onion • 4.8 tonnes
-        </p>
-
-      </div>
-
-
-      <div class="risk-big">
-
-        <span>
-          Predicted spoilage risk
-        </span>
-
-        <strong>
-          12%
-        </strong>
-
-        <small>
-          Next 7 days
-        </small>
-
-      </div>
-
-    </div>
-
-
-
-    <div class="grid two-col">
-
-
-      <div class="panel">
-
-        <div class="panel-head">
-
-          <h3>
-            Risk Forecast
-          </h3>
-
-          <span class="ai-pill">
-            ✦ AI MODEL
-          </span>
-
-        </div>
-
-
-        <canvas
-          id="riskChart"
-          height="240"
-        ></canvas>
-
-      </div>
-
-
-
-      <div class="panel">
-
-        <div class="panel-head">
-
-          <h3>
-            Prediction Factors
-          </h3>
-
-        </div>
-
-
-
-        <div class="factor">
-
-          <div>
-
-            <b>
-              Temperature stability
-            </b>
-
-            <span>
-              92%
-            </span>
-
-          </div>
-
-          <div class="bar">
-            <i style="width:92%"></i>
-          </div>
-
-        </div>
-
-
-
-        <div class="factor">
-
-          <div>
-
-            <b>
-              Humidity stability
-            </b>
-
-            <span>
-              86%
-            </span>
-
-          </div>
-
-          <div class="bar">
-            <i style="width:86%"></i>
-          </div>
-
-        </div>
-
-
-
-        <div class="factor">
-
-          <div>
-
-            <b>
-              Gas trend
-            </b>
-
-            <span>
-              71%
-            </span>
-
-          </div>
-
-          <div class="bar">
-            <i style="width:71%"></i>
-          </div>
-
-        </div>
-
-
-
-        <div class="factor">
-
-          <div>
-
-            <b>
-              Storage duration
-            </b>
-
-            <span>
-              94%
-            </span>
-
-          </div>
-
-          <div class="bar">
-            <i style="width:94%"></i>
-          </div>
-
-        </div>
-
-
-
-        <div class="prediction-note">
-
-          ✦
-
-          <b>
-            Model confidence: 91%
-          </b>
-
-          <br>
-
-          <small>
-            Prediction updates when
-            new sensor data arrives.
-          </small>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </section>
-
-
-
-  <!-- =====================================================
-       ALERTS
-  ===================================================== -->
-
-  <section
-    id="alerts"
-    class="page"
-  >
-
-    <div class="section-intro">
-
-      <span class="tag">
-        ATTENTION CENTER
-      </span>
-
-      <h2>
-        Alerts & Actions
-      </h2>
-
-      <p>
-        Prioritized notifications from
-        your storage environment.
-      </p>
-
-    </div>
-
-
-
-    <div class="alert-summary">
-
-      <div>
-
-        <b>
-          3
-        </b>
-
-        <span>
-          Active alerts
-        </span>
-
-      </div>
-
-
-      <div>
-
-        <b>
-          18
-        </b>
-
-        <span>
-          Resolved
-        </span>
-
-      </div>
-
-
-      <div>
-
-        <b>
-          0
-        </b>
-
-        <span>
-          Critical alerts
-        </span>
-
-      </div>
-
-    </div>
-
-
-
-    <div class="panel">
-
-      <div id="allAlerts"></div>
-
-    </div>
-
-  </section>
-
-
-
-  <!-- =====================================================
-       STORAGE BATCHES
-  ===================================================== -->
-
-  <section
-    id="storage"
-    class="page"
-  >
-
-    <div class="section-intro">
-
-      <span class="tag">
-        INVENTORY
-      </span>
-
-      <h2>
-        Storage Batches
-      </h2>
-
-      <p>
-        Track stored produce,
-        quantity and predicted condition.
-      </p>
-
-    </div>
-
-
-
-    <div class="toolbar">
-
-      <input
-        id="batchSearch"
-        placeholder="Search batch ID or variety"
-      >
-
-
-      <button
-        class="primary"
-        id="newBatch"
-        type="button"
-      >
-        + New Batch
-      </button>
-
-    </div>
-
-
-
-    <div class="panel table-panel">
-
-      <table>
-
-        <thead>
-
-          <tr>
-
-            <th>
-              Batch ID
-            </th>
-
-            <th>
-              Variety
-            </th>
-
-            <th>
-              Quantity
-            </th>
-
-            <th>
-              Stored
-            </th>
-
-            <th>
-              Temperature
-            </th>
-
-            <th>
-              Risk
-            </th>
-
-            <th>
-              Status
-            </th>
-
-          </tr>
-
-        </thead>
-
-
-        <tbody
-          id="batchTable"
-        ></tbody>
-
-      </table>
-
-    </div>
-
-  </section>
-
-
-
-  <!-- =====================================================
-       REPORTS
-  ===================================================== -->
-
-  <section
-    id="reports"
-    class="page"
-  >
-
-    <div class="section-intro">
-
-      <span class="tag">
-        INSIGHTS
-      </span>
-
-      <h2>
-        Reports & Analytics
-      </h2>
-
-      <p>
-        Understand storage performance
-        and predicted loss prevention.
-      </p>
-
-    </div>
-
-
-
-    <div class="grid cards-4">
-
-      <div class="metric-card">
-
-        <small>
-          Produce monitored
-        </small>
-
-        <strong>
-          24.8 t
-        </strong>
-
-        <span class="good">
-          System tracking active
-        </span>
-
-      </div>
-
-
-      <div class="metric-card">
-
-        <small>
-          Estimated loss prevented
-        </small>
-
-        <strong>
-          ₹1.84L
-        </strong>
-
-        <span class="good">
-          AI-assisted estimate
-        </span>
-
-      </div>
-
-
-      <div class="metric-card">
-
-        <small>
-          Avg. storage life
-        </small>
-
-        <strong>
-          41 days
-        </strong>
-
-        <span class="good">
-          Performance estimate
-        </span>
-
-      </div>
-
-
-      <div class="metric-card">
-
-        <small>
-          System uptime
-        </small>
-
-        <strong>
-          99.2%
-        </strong>
-
-        <span class="good">
-          System ready
-        </span>
-
-      </div>
-
-    </div>
-
-
-
-    <div class="grid two-col">
-
-
-      <div class="panel">
-
-        <div class="panel-head">
-
-          <h3>
-            Monthly Loss Prevention
-          </h3>
-
-          <span>
-            2026
-          </span>
-
-        </div>
-
-
-        <canvas
-          id="reportChart"
-          height="240"
-        ></canvas>
-
-      </div>
-
-
-
-      <div class="panel">
-
-        <div class="panel-head">
-
-          <h3>
-            Download Report
-          </h3>
-
-        </div>
-
-
-
-        <div class="download-card">
-
-          <div class="file-icon">
-            PDF
-          </div>
-
-
-          <div>
-
-            <b>
-              PredicStor Monthly Report
-            </b>
-
-            <small>
-              Demo report
-            </small>
-
-          </div>
-
-
-          <button
-            class="primary"
-            id="downloadBtn"
-            type="button"
-          >
-            Download
-          </button>
-
-        </div>
-
-
-
-        <div class="download-card">
-
-          <div class="file-icon">
-            CSV
-          </div>
-
-
-          <div>
-
-            <b>
-              Sensor Data Export
-            </b>
-
-            <small>
-              Current sensor data
-            </small>
-
-          </div>
-
-
-          <button
-            class="secondary"
-            id="csvBtn"
-            type="button"
-          >
-            Export
-          </button>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </section>
-
-
-
-  <!-- =====================================================
-       SETTINGS
-  ===================================================== -->
-
-  <section
-    id="settings"
-    class="page"
-  >
-
-    <div class="section-intro">
-
-      <span class="tag">
-        CONFIGURATION
-      </span>
-
-      <h2>
-        Settings
-      </h2>
-
-      <p>
-        Configure storage thresholds
-        and automation preferences.
-      </p>
-
-    </div>
-
-
-
-    <div class="panel settings-panel">
-
-
-      <div class="setting-row">
-
-        <div>
-
-          <b>
-            Temperature threshold
-          </b>
-
-          <small>
-            Alert when temperature
-            exceeds this value
-          </small>
-
-        </div>
-
-
-        <input
-          type="number"
-          value="28"
-        >
-
-        <span>
-          °C
-        </span>
-
-      </div>
-
-
-
-      <div class="setting-row">
-
-        <div>
-
-          <b>
-            Humidity threshold
-          </b>
-
-          <small>
-            Alert when humidity
-            exceeds this value
-          </small>
-
-        </div>
-
-
-        <input
-          type="number"
-          value="75"
-        >
-
-        <span>
-          %
-        </span>
-
-      </div>
-
-
-
-      <div class="setting-row">
-
-        <div>
-
-          <b>
-            Gas alert level
-          </b>
-
-          <small>
-            Trigger warning above
-            this value
-          </small>
-
-        </div>
-
-
-        <input
-          type="number"
-          value="1.00"
-          step="0.01"
-        >
-
-        <span>
-          ppm
-        </span>
-
-      </div>
-
-
-
-      <div class="setting-row">
-
-        <div>
-
-          <b>
-            Automatic ventilation
-          </b>
-
-          <small>
-            Allow automatic action
-            from AI recommendations
-          </small>
-
-        </div>
-
-
-        <label class="switch">
-
-          <input
-            type="checkbox"
-            checked
-          >
-
-          <i></i>
-
-        </label>
-
-      </div>
-
-
-
-      <button
-        class="primary"
-        id="saveSettings"
-        type="button"
-      >
-        Save Changes
-      </button>
-
-    </div>
-
-  </section>
-
-
-</main>
-
-
-
-<!-- TOAST -->
-
-<div
-  class="toast"
-  id="toast"
-></div>
-
+<div id="toast" class="toast"></div>
 
 
 <!-- FIREBASE -->
-
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
-
-
-<!-- APP SCRIPT -->
-
+<!-- APP -->
 <script src="script.js"></script>
 
-
 </body>
-
 </html>
