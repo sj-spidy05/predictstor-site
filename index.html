@@ -33,6 +33,56 @@
     rel="stylesheet"
     href="style.css"
   >
+  <style>
+#userProfileMenu {
+    position: absolute;
+    top: 70px;
+    right: 20px;
+    z-index: 9999;
+}
+
+.profile-menu-content {
+    background: #ffffff;
+    border: 1px solid #dfe7e1;
+    border-radius: 14px;
+    padding: 16px;
+    min-width: 220px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+}
+
+.profile-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #16823b;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 14px;
+}
+
+.profile-info strong {
+    font-size: 16px;
+}
+
+.profile-info small {
+    color: #6b756d;
+}
+
+#logoutBtn {
+    width: 100%;
+    cursor: pointer;
+}
+</style>
 </head>
 
 
@@ -52,7 +102,25 @@
   >
     ⋮
   </button>
+<!-- USER PROFILE MENU -->
+<div id="userProfileMenu" style="display:none;">
+    <div class="profile-menu-content">
+        <div class="profile-avatar" id="profileAvatar">U</div>
 
+        <div class="profile-info">
+            <strong id="profileUserName">User</strong>
+            <small id="profileUserRole">Farmer</small>
+            <small id="profileUserPhone">Not logged in</small>
+        </div>
+
+        <button
+            id="logoutBtn"
+            type="button"
+            class="secondary">
+            Logout
+        </button>
+    </div>
+</div>
 
   <div
     id="loginPanel"
