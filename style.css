@@ -938,3 +938,27 @@ th{
     visibility: visible !important;
   }
 }
+@media (max-width: 768px) {
+  .header,
+  .navbar,
+  .nav-container {
+    height: auto !important;
+    min-height: 0 !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  .nav-menu,
+  .navigation {
+    height: auto !important;
+    min-height: 0 !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  .main-content,
+  .dashboard-content {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+}
