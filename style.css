@@ -904,61 +904,51 @@ th{
   }
 
 }
-/* Force Settings option to show on mobile */
-@media (max-width: 768px) {
-  .nav-item[data-page="settings"] {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-  }
-}
-/* MOBILE - SHOW ALL NAVIGATION ITEMS INCLUDING SETTINGS */
-@media (max-width: 768px) {
+/* MOBILE NAVIGATION FIX */
+@media (max-width: 760px) {
 
-  .sidebar,
-  .nav,
-  .nav-menu {
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    max-height: none !important;
-    height: auto !important;
-    padding-bottom: 90px !important;
+  .sidebar {
+    position: relative;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    padding: 14px;
+    overflow: visible;
   }
 
-  .nav-item,
-  .nav-item[data-page="settings"] {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: relative !important;
+  .sidebar nav {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 0;
   }
 
-  .nav-item:last-child {
-    display: flex !important;
-    visibility: visible !important;
-  }
-}
-@media (max-width: 768px) {
-  .header,
-  .navbar,
-  .nav-container {
-    height: auto !important;
-    min-height: 0 !important;
-    padding-bottom: 0 !important;
-    margin-bottom: 0 !important;
+  .nav-item {
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
 
-  .nav-menu,
-  .navigation {
-    height: auto !important;
-    min-height: 0 !important;
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
+  .sidebar-bottom {
+    display: flex;
+    flex-direction: row;
+    margin-top: 6px;
+    gap: 6px;
+    align-items: center;
   }
 
-  .main-content,
-  .dashboard-content {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
+  .sidebar-bottom .nav-item {
+    display: flex;
+  }
+
+  .system-card {
+    display: none;
+  }
+
+  .main {
+    margin-left: 0;
+    padding: 18px 14px 40px;
   }
 }
