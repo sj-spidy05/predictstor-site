@@ -482,16 +482,17 @@ function updateOptimizationUI() {
 function updateProfileUI(user) {
   const profile = getProfile();
 
-  const displayName =
-    profile?.name ||
-    user?.phoneNumber ||
-    "Guest User";
+  const profile = getProfile();
 
-  const phone =
-    user?.phoneNumber ||
-    profile?.phone ||
-    "Not logged in";
+const displayName =
+  user
+    ? (profile?.name || user.phoneNumber || "User")
+    : "Guest User";
 
+const phone =
+  user
+    ? (user.phoneNumber || profile?.phone || "Not available")
+    : "Not logged in";
   const initials = getInitials(displayName);
 
   $("#userName").textContent = displayName;
