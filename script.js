@@ -1,4 +1,4 @@
-const firebaseConfig = {
+ const firebaseConfig = {
   apiKey: "AIzaSyBxVrLZ0YYaGYcEjxL2gyDXKaudDyPNvZM",
   authDomain: "predictstor.firebaseapp.com",
   projectId: "predictstor",
@@ -147,18 +147,14 @@ function navigate(page) {
     behavior: "smooth"
   });
 
-  if (page === "sensors") {
-    drawSensorChart();
-  }
+  if (page === "sensors") drawSensorChart();
 
   if (page === "prediction") {
     drawRiskChart();
     updateOptimizationUI();
   }
 
-  if (page === "reports") {
-    drawReportChart();
-  }
+  if (page === "reports") drawReportChart();
 }
 
 $$(".nav-item[data-page]").forEach(button => {
@@ -219,11 +215,14 @@ function lineChart(canvasId, datasets, labels) {
   const colors = ["#13834b", "#7aa9c8", "#d69a22"];
 
   datasets.forEach((dataset, datasetIndex) => {
-
     ctx.beginPath();
 
     dataset.forEach((value, index) => {
-      const x = 35 + index * (width - 50) / Math.max(dataset.length - 1, 1);
+      const x =
+        35 +
+        index *
+        (width - 50) /
+        Math.max(dataset.length - 1, 1);
 
       const y =
         18 +
@@ -240,14 +239,18 @@ function lineChart(canvasId, datasets, labels) {
     ctx.strokeStyle = colors[datasetIndex % colors.length];
     ctx.lineWidth = 2;
     ctx.stroke();
-
   });
 
   ctx.fillStyle = "#839088";
   ctx.font = "10px Inter";
 
   labels.forEach((label, index) => {
-    const x = 35 + index * (width - 50) / Math.max(labels.length - 1, 1);
+    const x =
+      35 +
+      index *
+      (width - 50) /
+      Math.max(labels.length - 1, 1);
+
     ctx.fillText(label, x - 8, height - 5);
   });
 }
@@ -276,7 +279,6 @@ function drawSensorChart() {
 
 function drawRiskChart() {
   const profile = getProfile();
-
   let risk = 12;
 
   if (profile) {
@@ -285,17 +287,7 @@ function drawRiskChart() {
 
   lineChart(
     "riskChart",
-    [
-      [
-        risk,
-        risk + 3,
-        risk + 5,
-        risk + 9,
-        risk + 13,
-        risk + 18,
-        risk + 23
-      ]
-    ],
+    [[risk, risk + 3, risk + 5, risk + 9, risk + 13, risk + 18, risk + 23]],
     ["Now", "D1", "D2", "D3", "D4", "D5", "D6"]
   );
 }
@@ -303,9 +295,7 @@ function drawRiskChart() {
 function drawReportChart() {
   lineChart(
     "reportChart",
-    [
-      [30, 42, 39, 51, 57, 68, 76, 84]
-    ],
+    [[30, 42, 39, 51, 57, 68, 76, 84]],
     ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"]
   );
 }
@@ -317,7 +307,6 @@ function drawReportChart() {
 
 function getRecommendation(product) {
   const recommendations = {
-
     Onion: {
       temp: "0–4°C for refrigerated storage or controlled ambient storage depending on curing and storage method",
       humidity: "65–75%",
@@ -389,22 +378,22 @@ function getRecommendation(product) {
       ventilation: "Maintain adequate airflow",
       note: "Select a specific product profile for more accurate recommendations."
     }
-
   };
 
   return recommendations[product] || recommendations.Other;
 }
 
 function calculateRisk(profile) {
-  const rec = getRecommendation(profile.product);
-
   let risk = 8;
 
   if (sensorData.temperature > 28) risk += 15;
   if (sensorData.humidity > 80) risk += 12;
   if (sensorData.gas > 1) risk += 10;
 
-  if (profile.product === "Tomato" && sensorData.temperature < 10) {
+  if (
+    profile.product === "Tomato" &&
+    sensorData.temperature < 10
+  ) {
     risk += 8;
   }
 
@@ -451,22 +440,18 @@ function updateOptimizationUI() {
       <b>Temperature</b>
       <span>${recommendation.temp}</span>
     </div>
-
     <div>
       <b>Humidity</b>
       <span>${recommendation.humidity}</span>
     </div>
-
     <div>
       <b>Gas / Air Quality</b>
       <span>${recommendation.gas}</span>
     </div>
-
     <div>
       <b>Ventilation</b>
       <span>${recommendation.ventilation}</span>
     </div>
-
     <div>
       <b>Important Note</b>
       <span>${recommendation.note}</span>
@@ -482,17 +467,17 @@ function updateOptimizationUI() {
 function updateProfileUI(user) {
   const profile = getProfile();
 
-  const profile = getProfile();
+  /* IMPORTANT LOGOUT FIX */
+  const displayName =
+    user
+      ? (profile?.name || user.phoneNumber || "User")
+      : "Guest User";
 
-const displayName =
-  user
-    ? (profile?.name || user.phoneNumber || "User")
-    : "Guest User";
+  const phone =
+    user
+      ? (user.phoneNumber || profile?.phone || "Not available")
+      : "Not logged in";
 
-const phone =
-  user
-    ? (user.phoneNumber || profile?.phone || "Not available")
-    : "Not logged in";
   const initials = getInitials(displayName);
 
   $("#userName").textContent = displayName;
@@ -509,10 +494,11 @@ const phone =
   $("#profileAvatar").textContent = initials;
 
   $("#profileGodownName").textContent =
-    profile?.godownName || "Not configured";
+    user && profile?.godownName
+      ? profile.godownName
+      : "Not configured";
 
-  if (profile) {
-
+  if (user && profile) {
     $("#welcomeTitle").textContent =
       `Welcome, ${profile.name}`;
 
@@ -533,11 +519,11 @@ const phone =
         `● Paired: ${profile.deviceId}`;
 
       $("#systemStatus").textContent = "System Ready";
-      $("#systemSubStatus").textContent = "Device pairing saved";
+      $("#systemSubStatus").textContent =
+        "Device pairing saved";
     }
 
   } else {
-
     $("#welcomeTitle").textContent =
       user
         ? "Complete your godown setup"
@@ -551,8 +537,14 @@ const phone =
     $("#setupFromDashboard").textContent =
       user ? "Setup My Godown" : "Login to Setup";
 
-    $("#pairedGodownId").textContent = "Not configured";
-    $("#pairedDeviceId").textContent = "Not paired";
+    $("#pairedGodownId").textContent =
+      "Not configured";
+
+    $("#pairedDeviceId").textContent =
+      "Not paired";
+
+    $("#deviceConnectionStatus").textContent =
+      "● Device not paired";
   }
 
   updateOptimizationUI();
@@ -564,23 +556,15 @@ const phone =
 --------------------------------------------- */
 
 $("#menuBtn")?.addEventListener("click", () => {
-
   const user = firebase.auth().currentUser;
 
   if (user) {
-
     $("#loginPanel").classList.add("hidden");
-
     $("#userProfileMenu").classList.toggle("hidden");
-
   } else {
-
     $("#userProfileMenu").classList.add("hidden");
-
     $("#loginPanel").classList.remove("hidden");
-
   }
-
 });
 
 $("#closeLoginBtn")?.addEventListener("click", () => {
@@ -597,7 +581,6 @@ $("#closeSetupBtn")?.addEventListener("click", () => {
 --------------------------------------------- */
 
 $("#sendOtpBtn")?.addEventListener("click", async () => {
-
   const phone = $("#phoneNumber").value.trim();
 
   if (!phone) {
@@ -606,9 +589,7 @@ $("#sendOtpBtn")?.addEventListener("click", async () => {
   }
 
   try {
-
     if (!recaptchaVerifier) {
-
       recaptchaVerifier =
         new firebase.auth.RecaptchaVerifier(
           "recaptcha-container",
@@ -632,20 +613,15 @@ $("#sendOtpBtn")?.addEventListener("click", async () => {
     showToast("OTP sent successfully.");
 
   } catch (error) {
-
     console.error(error);
 
     showToast(
       error.message || "OTP could not be sent."
     );
-
   }
-
 });
 
-
 $("#verifyOtpBtn")?.addEventListener("click", async () => {
-
   const otp = $("#otpCode").value.trim();
 
   if (!confirmationResult) {
@@ -659,7 +635,6 @@ $("#verifyOtpBtn")?.addEventListener("click", async () => {
   }
 
   try {
-
     const result =
       await confirmationResult.confirm(otp);
 
@@ -679,13 +654,9 @@ $("#verifyOtpBtn")?.addEventListener("click", async () => {
     showToast("Login successful.");
 
   } catch (error) {
-
     console.error(error);
-
     showToast("Invalid OTP. Try again.");
-
   }
-
 });
 
 
@@ -694,7 +665,6 @@ $("#verifyOtpBtn")?.addEventListener("click", async () => {
 --------------------------------------------- */
 
 function openSetup() {
-
   const user = firebase.auth().currentUser;
 
   if (!user) {
@@ -705,41 +675,36 @@ function openSetup() {
   const profile = getProfile();
 
   if (profile) {
-
     $("#setupName").value = profile.name || "";
     $("#setupUserId").value = profile.userId || "";
-    $("#setupGodownName").value = profile.godownName || "";
-    $("#setupGodownId").value = profile.godownId || "";
-    $("#setupLocation").value = profile.location || "";
-    $("#setupProduct").value = profile.product || "";
-
+    $("#setupGodownName").value =
+      profile.godownName || "";
+    $("#setupGodownId").value =
+      profile.godownId || "";
+    $("#setupLocation").value =
+      profile.location || "";
+    $("#setupProduct").value =
+      profile.product || "";
   }
 
   $("#setupModal").classList.remove("hidden");
 }
 
 $("#setupFromDashboard")?.addEventListener("click", () => {
-
   if (!firebase.auth().currentUser) {
     $("#loginPanel").classList.remove("hidden");
     return;
   }
 
   openSetup();
-
 });
 
 $("#editProfileBtn")?.addEventListener("click", () => {
-
   $("#userProfileMenu").classList.add("hidden");
-
   openSetup();
-
 });
 
-
 $("#saveProfileBtn")?.addEventListener("click", () => {
-
   const user = firebase.auth().currentUser;
 
   if (!user) {
@@ -775,11 +740,9 @@ $("#saveProfileBtn")?.addEventListener("click", () => {
   $("#setupModal").classList.add("hidden");
 
   updateProfileUI(user);
-
   renderSensors();
 
   showToast("Profile and godown saved.");
-
 });
 
 
@@ -788,7 +751,6 @@ $("#saveProfileBtn")?.addEventListener("click", () => {
 --------------------------------------------- */
 
 $("#pairDeviceBtn")?.addEventListener("click", () => {
-
   const user = firebase.auth().currentUser;
 
   if (!user) {
@@ -820,8 +782,9 @@ $("#pairDeviceBtn")?.addEventListener("click", () => {
 
   $("#deviceIdInput").value = "";
 
-  showToast(`Device ${deviceId} paired successfully.`);
-
+  showToast(
+    `Device ${deviceId} paired successfully.`
+  );
 });
 
 
@@ -830,13 +793,12 @@ $("#pairDeviceBtn")?.addEventListener("click", () => {
 --------------------------------------------- */
 
 $("#logoutBtn")?.addEventListener("click", async () => {
-
   try {
-
     await firebase.auth().signOut();
 
     $("#userProfileMenu").classList.add("hidden");
 
+    /* UI RESET */
     updateProfileUI(null);
 
     showToast("Logged out successfully.");
@@ -844,22 +806,16 @@ $("#logoutBtn")?.addEventListener("click", async () => {
     navigate("dashboard");
 
   } catch (error) {
-
     console.error(error);
-
     showToast("Logout failed.");
-
   }
-
 });
 
 
 firebase.auth().onAuthStateChanged(user => {
-
-  $("#userProfileMenu").classList.add("hidden");
+  $("#userProfileMenu")?.classList.add("hidden");
 
   updateProfileUI(user);
-
 });
 
 
@@ -868,18 +824,42 @@ firebase.auth().onAuthStateChanged(user => {
 --------------------------------------------- */
 
 function renderSensors() {
-
   const profile = getProfile();
 
   const paired =
     Boolean(profile?.deviceId);
 
   const data = [
-    ["Temperature", `${sensorData.temperature.toFixed(1)}°C`, "Optimal", "🌡"],
-    ["Humidity", `${Math.round(sensorData.humidity)}%`, "Monitoring", "💧"],
-    ["Gas Level", `${sensorData.gas.toFixed(2)} ppm`, "Monitoring", "◉"],
-    ["Airflow", `${sensorData.airflow.toFixed(1)} m/s`, "Normal", "≋"],
-    ["Battery", `${Math.round(sensorData.battery)}%`, "Solar Ready", "☀"],
+    [
+      "Temperature",
+      `${sensorData.temperature.toFixed(1)}°C`,
+      "Optimal",
+      "🌡"
+    ],
+    [
+      "Humidity",
+      `${Math.round(sensorData.humidity)}%`,
+      "Monitoring",
+      "💧"
+    ],
+    [
+      "Gas Level",
+      `${sensorData.gas.toFixed(2)} ppm`,
+      "Monitoring",
+      "◉"
+    ],
+    [
+      "Airflow",
+      `${sensorData.airflow.toFixed(1)} m/s`,
+      "Normal",
+      "≋"
+    ],
+    [
+      "Battery",
+      `${Math.round(sensorData.battery)}%`,
+      "Solar Ready",
+      "☀"
+    ],
     [
       "Device",
       paired ? "Paired" : "Demo",
@@ -900,7 +880,6 @@ function renderSensors() {
       <span>${item[2]}</span>
     </div>
   `).join("");
-
 }
 
 
@@ -909,7 +888,6 @@ function renderSensors() {
 --------------------------------------------- */
 
 function updateDashboardSensors() {
-
   $("#tempVal").textContent =
     `${sensorData.temperature.toFixed(1)}°C`;
 
@@ -944,7 +922,6 @@ function updateDashboardSensors() {
     sensorData.airflow < 1
       ? "Low airflow"
       : "Normal";
-
 }
 
 
@@ -953,23 +930,25 @@ function updateDashboardSensors() {
 --------------------------------------------- */
 
 function renderAlerts() {
-
   const recent = $("#recentAlerts");
   const all = $("#allAlerts");
 
   const buildAlert = alert => `
     <div class="alert-row">
-
       <div class="alert-icon">
-        ${alert.level === "good" ? "✓" :
-          alert.level === "info" ? "i" : "!"}
+        ${
+          alert.level === "good"
+            ? "✓"
+            : alert.level === "info"
+            ? "i"
+            : "!"
+        }
       </div>
 
       <div style="flex:1">
         <b>${alert.title}</b>
         <small>${alert.desc} • ${alert.time}</small>
       </div>
-
     </div>
   `;
 
@@ -982,9 +961,7 @@ function renderAlerts() {
 
   if (all) {
     all.innerHTML =
-      alerts
-        .map(buildAlert)
-        .join("");
+      alerts.map(buildAlert).join("");
   }
 
   const warningCount =
@@ -996,7 +973,6 @@ function renderAlerts() {
     $("#alertBadge").textContent =
       warningCount;
   }
-
 }
 
 
@@ -1005,7 +981,6 @@ function renderAlerts() {
 --------------------------------------------- */
 
 function renderBatches(filter = "") {
-
   const table = $("#batchTable");
 
   if (!table) return;
@@ -1038,7 +1013,6 @@ function renderBatches(filter = "") {
       </td>
     </tr>
   `).join("");
-
 }
 
 $("#batchSearch")?.addEventListener("input", event => {
@@ -1046,7 +1020,6 @@ $("#batchSearch")?.addEventListener("input", event => {
 });
 
 $("#newBatch")?.addEventListener("click", () => {
-
   const profile = getProfile();
 
   if (!profile) {
@@ -1070,7 +1043,6 @@ $("#newBatch")?.addEventListener("click", () => {
   renderBatches();
 
   showToast("Demo batch added.");
-
 });
 
 
@@ -1079,7 +1051,6 @@ $("#newBatch")?.addEventListener("click", () => {
 --------------------------------------------- */
 
 $("#ventBtn")?.addEventListener("click", () => {
-
   const button = $("#ventBtn");
 
   if (button.disabled) return;
@@ -1092,16 +1063,13 @@ $("#ventBtn")?.addEventListener("click", () => {
   showToast("Demo ventilation cycle started.");
 
   setTimeout(() => {
-
     button.disabled = false;
     button.textContent = "Test Ventilation";
 
     $("#ventState").textContent = "Standby";
 
     showToast("Demo ventilation cycle completed.");
-
   }, 5000);
-
 });
 
 
@@ -1110,11 +1078,11 @@ $("#ventBtn")?.addEventListener("click", () => {
 --------------------------------------------- */
 
 $("#saveSettings")?.addEventListener("click", () => {
-
   const settings = {
     temp: $("#tempThreshold").value,
     humidity: $("#humidityThreshold").value,
-    autoVentilation: $("#autoVentilation").checked
+    autoVentilation:
+      $("#autoVentilation").checked
   };
 
   localStorage.setItem(
@@ -1123,7 +1091,6 @@ $("#saveSettings")?.addEventListener("click", () => {
   );
 
   showToast("Settings saved.");
-
 });
 
 
@@ -1142,12 +1109,9 @@ $("#csvBtn")?.addEventListener("click", () => {
 
 /* ---------------------------------------------
    LIVE DEMO SENSOR SIMULATION
-   Replace this section later with real
-   Arduino / cloud sensor data.
 --------------------------------------------- */
 
 function simulateSensors() {
-
   sensorData.temperature =
     24 + Math.random() * 3;
 
@@ -1178,7 +1142,6 @@ function simulateSensors() {
   if (profile) {
     updateOptimizationUI();
   }
-
 }
 
 
@@ -1211,4 +1174,3 @@ window.addEventListener("resize", () => {
 });
 
 setInterval(simulateSensors, 5000);
-
