@@ -91,17 +91,269 @@ function showToast(message) {
   }, 2600);
 }
 
+// ============================================
+// PREDICSTOR SECURE FARMER PROFILE SYSTEM
+// Firebase Authentication + Cloud Firestore
+// ============================================
+
+// Firestore database
+const db = firebase.firestore();
+
+// Current farmer profile stored only in memory.
+// localStorage is NOT used as the source of truth.
+let currentProfile = null;
+
+
+// --------------------------------------------
+// GET CURRENT FARMER PROFILE
+// --------------------------------------------
 function getProfile() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY));
-  } catch {
+  return currentProfile;
+}
+
+
+// --------------------------------------------
+// LOAD PROFILE FOR CURRENT LOGGED-IN USER
+// --------------------------------------------
+async function loadProfile() {
+  const user = firebase.auth().currentUser;
+
+  if (!user) {
+    currentProfile = null;
     return null;
+  }
+
+  try {
+    const farmerRef = db.collection("farmers").doc(user.uid);
+
+    const farmerDoc = await farmerRef.get();
+
+    if (!farmerDoc.exists) {
+      currentProfile = null;
+      return null;
+    }
+
+    currentProfile = {
+      uid: user.uid,
+      ...farmerDoc.data()
+    };
+
+    return currentProfile;
+
+  } catch (error) {
+    console.error("Error loading farmer profile:", error);
+    currentProfile = null;
+    throw error;
   }
 }
 
-function saveProfile(profile) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+
+// --------------------------------------------
+// SAVE FARMER PROFILE
+// --------------------------------------------
+async function saveProfile(profile) {
+  const user = firebase.auth().currentUser;
+
+  if (!user) {
+    throw new Error("No authenticated user found.");
+  }
+
+  const data = {
+    ...profile,
+
+    uid: user.uid,
+
+    // Authenticated phone is the trusted identity
+    phone: user.phoneNumber || profile.phone || "",
+
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  await db
+    .collection("farmers")
+    .doc(user.uid)
+    .set(data, { merge: true });
+
+  currentProfile = {
+    ...currentProfile,
+    ...data
+  };
+
+  return currentProfile;
 }
+
+
+// --------------------------------------------
+// CHECK DUPLICATE FARMER ID
+// --------------------------------------------
+async function isFarmerIdTaken(farmerId) {
+
+  if (!farmerId) return false;
+
+  const user = firebase.auth().currentUser;
+
+  const snapshot = await db
+    .collection("farmers")
+    .where("farmerId", "==", farmerId.trim())
+    .limit(1)
+    .get();
+
+  if (snapshot.empty) {
+    return false;
+  }
+
+  // Same logged-in farmer editing own profile = allowed
+  return snapshot.docs.some(doc => doc.id !== user.uid);
+}
+
+
+// --------------------------------------------
+// CHECK DUPLICATE PHONE
+// --------------------------------------------
+async function isPhoneTaken(phone) {
+
+  if (!phone) return false;
+
+  const user = firebase.auth().currentUser;
+
+  const normalizedPhone = phone.trim();
+
+  const snapshot = await db
+    .collection("farmers")
+    .where("phone", "==", normalizedPhone)
+    .limit(1)
+    .get();
+
+  if (snapshot.empty) {
+    return false;
+  }
+
+  return snapshot.docs.some(doc => doc.id !== user.uid);
+}
+
+
+// --------------------------------------------
+// CREATE OR UPDATE FARMER PROFILE
+// --------------------------------------------
+async function createOrUpdateFarmer(profile) {
+
+  const user = firebase.auth().currentUser;
+
+  if (!user) {
+    throw new Error("Please login first.");
+  }
+
+  const farmerId = (profile.farmerId || "").trim();
+
+  // Name is NOT checked because multiple farmers
+  // can legitimately have the same name.
+
+  if (!farmerId) {
+    throw new Error("Farmer ID is required.");
+  }
+
+
+  // Duplicate Farmer ID protection
+  const farmerIdTaken = await isFarmerIdTaken(farmerId);
+
+  if (farmerIdTaken) {
+    throw new Error(
+      "This Farmer ID is already registered. Please use your correct unique Farmer ID."
+    );
+  }
+
+
+  // Always use authenticated phone number
+  const authenticatedPhone = user.phoneNumber;
+
+  if (!authenticatedPhone) {
+    throw new Error(
+      "Authenticated phone number not found. Please login again."
+    );
+  }
+
+
+  const phoneTaken = await isPhoneTaken(authenticatedPhone);
+
+  if (phoneTaken) {
+    throw new Error(
+      "This phone number is already linked to another farmer."
+    );
+  }
+
+
+  const farmerData = {
+    ...profile,
+
+    uid: user.uid,
+    farmerId: farmerId,
+
+    phone: authenticatedPhone,
+
+    name: (profile.name || "").trim(),
+
+    createdAt:
+      currentProfile?.createdAt ||
+      firebase.firestore.FieldValue.serverTimestamp(),
+
+    updatedAt:
+      firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+
+  await db
+    .collection("farmers")
+    .doc(user.uid)
+    .set(farmerData, { merge: true });
+
+
+  currentProfile = {
+    ...currentProfile,
+    ...farmerData
+  };
+
+  return currentProfile;
+}
+
+
+// --------------------------------------------
+// CLEAR PROFILE AFTER LOGOUT
+// --------------------------------------------
+function clearCurrentProfile() {
+
+  currentProfile = null;
+
+  // Remove only the old insecure cache
+  localStorage.removeItem("predictstor_profile_v1");
+}
+
+
+// --------------------------------------------
+// LISTEN FOR AUTH CHANGES
+// --------------------------------------------
+firebase.auth().onAuthStateChanged(async (user) => {
+
+  if (user) {
+
+    try {
+      await loadProfile();
+
+    } catch (error) {
+
+      console.error(
+        "Unable to load farmer profile:",
+        error
+      );
+
+    }
+
+  } else {
+
+    clearCurrentProfile();
+
+  }
+
+});
 
 function getInitials(value) {
   if (!value) return "GU";
