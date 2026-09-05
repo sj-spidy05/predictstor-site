@@ -1,1428 +1,248 @@
- const firebaseConfig = {
-  apiKey: "AIzaSyBxVrLZ0YYaGYcEjxL2gyDXKaudDyPNvZM",
-  authDomain: "predictstor.firebaseapp.com",
-  projectId: "predictstor",
-  storageBucket: "predictstor.firebasestorage.app",
-  messagingSenderId: "984193094318",
-  appId: "1:984193094318:web:5c5614bf83a431b98f133f",
-  measurementId: "G-L254S3YZ5D"
-};
+/* BhoomiNOVA — browser-safe demo application logic */
+(() => {
+  "use strict";
 
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
+  const firebaseConfig = {
+    apiKey: "AIzaSyBxVrLZ0YYaGYcEjxL2gyDXKaudDyPNvZM",
+    authDomain: "predictstor.firebaseapp.com",
+    projectId: "predictstor",
+    storageBucket: "predictstor.firebasestorage.app",
+    messagingSenderId: "984193094318",
+    appId: "1:984193094318:web:5c5614bf83a431b98f133f",
+    measurementId: "G-L254S3YZ5D"
+  };
 
-const $ = selector => document.querySelector(selector);
-const $$ = selector => document.querySelectorAll(selector);
+  const CROP_PROFILES = {
+    Onion: { temp: "0–4°C where refrigerated storage is verified", humidity: "65–75%", note: "Keep produce dry and ventilated; conditions depend on curing and storage method." },
+    Potato: { temp: "4–10°C depending on intended use", humidity: "90–95%", note: "Avoid unsuitable temperatures that can affect quality and sprouting." },
+    Tomato: { temp: "12–20°C depending on maturity", humidity: "85–95%", note: "Do not overcool immature tomatoes; variety and maturity matter." },
+    Carrot: { temp: "0–4°C", humidity: "90–95%", note: "High humidity can reduce dehydration when verified for the crop." },
+    Cabbage: { temp: "0–4°C", humidity: "90–95%", note: "Avoid prolonged heat exposure and record field conditions." },
+    Cauliflower: { temp: "0–4°C", humidity: "90–95%", note: "Low-temperature storage may help quality depending on cultivar." },
+    Garlic: { temp: "0–5°C or suitable dry ambient storage", humidity: "60–70%", note: "Dry conditions and airflow are important for stored bulbs." },
+    Apple: { temp: "0–4°C depending on variety", humidity: "90–95%", note: "Storage conditions and ethylene management depend on variety." },
+    Brinjal: { temp: "10–12°C depending on variety", humidity: "90–95%", note: "Avoid chilling injury; verify crop-specific guidance before acting." },
+    Other: { temp: "Crop-specific rule not configured", humidity: "Crop-specific rule not configured", note: "Add a verified crop profile before using storage recommendations." }
+  };
+  const CROPS = Object.keys(CROP_PROFILES);
+  const PAGE_TITLES = { dashboard: "Field overview", sensors: "Live sensor network", prediction: "Crop intelligence", alerts: "Alerts & actions", history: "Event history", traceability: "Traceability records", settings: "Settings & profile", help: "Help & about" };
+  const STORAGE_PREFIX = "bhoominova_workspace_v1_";
+  const SETTINGS_KEY = "bhoominova_settings_v1";
 
-const STORAGE_KEY = "predictstor_profile_v1";
+  const $ = (selector) => document.querySelector(selector);
+  const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+  const text = (selector, value) => { const el = $(selector); if (el) el.textContent = value ?? ""; };
+  const safeParse = (value, fallback) => { try { return value ? JSON.parse(value) : fallback; } catch (_) { return fallback; } };
+  const nowIso = () => new Date().toISOString();
+  const formatDate = (value) => { const date = new Date(value); return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); };
+  const formatTime = (value) => { const date = new Date(value); return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); };
+  const initials = (value) => String(value || "BN").split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase() || "BN";
+  const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
 
-const pages = {
-  dashboard: "Storage Dashboard",
-  sensors: "Live Sensor Network",
-  prediction: "AI Spoilage Prediction",
-  alerts: "Alerts & Actions",
-  storage: "Storage Batches",
-  controls: "Automatic Control Status",
-  reports: "Reports & Analytics",
-  settings: "Settings"
-};
-
-let confirmationResult = null;
-let recaptchaVerifier = null;
-
-let sensorData = {
-  temperature: 24.6,
-  humidity: 68,
-  gas: 0.82,
-  airflow: 1.8,
-  battery: 86
-};
-
-let alerts = [
-  {
-    level: "warning",
-    title: "Gas concentration rising",
-    time: "2 min ago",
-    desc: "Gas level is approaching the configured watch range."
-  },
-  {
-    level: "info",
-    title: "Sensor system ready",
-    time: "34 min ago",
-    desc: "Demo sensor values are available until the physical device is connected."
-  },
-  {
-    level: "warning",
-    title: "Humidity monitoring",
-    time: "1 hr ago",
-    desc: "Humidity trend is being checked against the storage recommendation."
-  },
-  {
-    level: "good",
-    title: "System stabilized",
-    time: "2 hr ago",
-    desc: "Environmental values are currently within the demo target range."
-  }
-];
-
-let batches = [
-  ["ON-2026-0815", "Red Onion", "4.8 t", "15 Aug 2026", "24.6°C", "68%", "Healthy"],
-  ["ON-2026-0812", "Nashik Red", "7.2 t", "12 Aug 2026", "25.1°C", "70%", "Healthy"],
-  ["ON-2026-0808", "Bellary Onion", "5.4 t", "08 Aug 2026", "27.4°C", "76%", "Watch"],
-  ["ON-2026-0801", "White Onion", "3.1 t", "01 Aug 2026", "26.8°C", "72%", "Healthy"]
-];
-
-
-/* ---------------------------------------------
-   BASIC HELPERS
---------------------------------------------- */
-
-function showToast(message) {
-  const toast = $("#toast");
-
-  if (!toast) return;
-
-  toast.textContent = message;
-  toast.classList.add("show");
-
-  setTimeout(() => {
-    toast.classList.remove("show");
-  }, 2600);
-}
-
-// ============================================
-// PREDICSTOR SECURE FARMER PROFILE SYSTEM
-// Firebase Authentication + Cloud Firestore
-// ============================================
-
-// Firestore database
-const db = firebase.firestore();
-
-// Current farmer profile stored only in memory.
-// localStorage is NOT used as the source of truth.
-let currentProfile = null;
-
-
-// --------------------------------------------
-// GET CURRENT FARMER PROFILE
-// --------------------------------------------
-function getProfile() {
-  return currentProfile;
-}
-
-
-// --------------------------------------------
-// LOAD PROFILE FOR CURRENT LOGGED-IN USER
-// --------------------------------------------
-async function loadProfile() {
-  const user = firebase.auth().currentUser;
-
-  if (!user) {
-    currentProfile = null;
-    return null;
-  }
-
+  let firebaseReady = false;
+  let firebaseDb = null;
+  let confirmationResult = null;
+  let recaptchaVerifier = null;
   try {
-    const farmerRef = db.collection("farmers").doc(user.uid);
-
-    const farmerDoc = await farmerRef.get();
-
-    if (!farmerDoc.exists) {
-      currentProfile = null;
-      return null;
+    if (window.firebase) {
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      firebaseReady = Boolean(firebase.auth);
+      firebaseDb = firebase.firestore ? firebase.firestore() : null;
     }
-
-    currentProfile = {
-      uid: user.uid,
-      ...farmerDoc.data()
-    };
-
-    return currentProfile;
-
   } catch (error) {
-    console.error("Error loading farmer profile:", error);
-    currentProfile = null;
-    throw error;
-  }
-}
-
-
-// --------------------------------------------
-// SAVE FARMER PROFILE
-// --------------------------------------------
-async function saveProfile(profile) {
-  const user = firebase.auth().currentUser;
-
-  if (!user) {
-    throw new Error("No authenticated user found.");
+    console.warn("Firebase browser configuration unavailable; local mode remains available.", error);
   }
 
-  const data = {
-    ...profile,
-
-    uid: user.uid,
-
-    // Authenticated phone is the trusted identity
-    phone: user.phoneNumber || profile.phone || "",
-
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-
-  await db
-    .collection("farmers")
-    .doc(user.uid)
-    .set(data, { merge: true });
-
-  currentProfile = {
-    ...currentProfile,
-    ...data
-  };
-
-  return currentProfile;
-}
-
-
-// --------------------------------------------
-// CHECK DUPLICATE FARMER ID
-// --------------------------------------------
-async function isFarmerIdTaken(farmerId) {
-
-  if (!farmerId) return false;
-
-  const user = firebase.auth().currentUser;
-
-  const snapshot = await db
-    .collection("farmers")
-    .where("farmerId", "==", farmerId.trim())
-    .limit(1)
-    .get();
-
-  if (snapshot.empty) {
-    return false;
-  }
-
-  // Same logged-in farmer editing own profile = allowed
-  return snapshot.docs.some(doc => doc.id !== user.uid);
-}
-
-
-// --------------------------------------------
-// CHECK DUPLICATE PHONE
-// --------------------------------------------
-async function isPhoneTaken(phone) {
-
-  if (!phone) return false;
-
-  const user = firebase.auth().currentUser;
-
-  const normalizedPhone = phone.trim();
-
-  const snapshot = await db
-    .collection("farmers")
-    .where("phone", "==", normalizedPhone)
-    .limit(1)
-    .get();
-
-  if (snapshot.empty) {
-    return false;
-  }
-
-  return snapshot.docs.some(doc => doc.id !== user.uid);
-}
-
-
-// --------------------------------------------
-// CREATE OR UPDATE FARMER PROFILE
-// --------------------------------------------
-async function createOrUpdateFarmer(profile) {
-
-  const user = firebase.auth().currentUser;
-
-  if (!user) {
-    throw new Error("Please login first.");
-  }
-
-  const farmerId = (profile.farmerId || "").trim();
-
-  // Name is NOT checked because multiple farmers
-  // can legitimately have the same name.
-
-  if (!farmerId) {
-    throw new Error("Farmer ID is required.");
-  }
-
-
-  // Duplicate Farmer ID protection
-  const farmerIdTaken = await isFarmerIdTaken(farmerId);
-
-  if (farmerIdTaken) {
-    throw new Error(
-      "This Farmer ID is already registered. Please use your correct unique Farmer ID."
-    );
-  }
-
-
-  // Always use authenticated phone number
-  const authenticatedPhone = user.phoneNumber;
-
-  if (!authenticatedPhone) {
-    throw new Error(
-      "Authenticated phone number not found. Please login again."
-    );
-  }
-
-
-  const phoneTaken = await isPhoneTaken(authenticatedPhone);
-
-  if (phoneTaken) {
-    throw new Error(
-      "This phone number is already linked to another farmer."
-    );
-  }
-
-
-  const farmerData = {
-    ...profile,
-
-    uid: user.uid,
-    farmerId: farmerId,
-
-    phone: authenticatedPhone,
-
-    name: (profile.name || "").trim(),
-
-    createdAt:
-      currentProfile?.createdAt ||
-      firebase.firestore.FieldValue.serverTimestamp(),
-
-    updatedAt:
-      firebase.firestore.FieldValue.serverTimestamp()
-  };
-
-
-  await db
-    .collection("farmers")
-    .doc(user.uid)
-    .set(farmerData, { merge: true });
-
-
-  currentProfile = {
-    ...currentProfile,
-    ...farmerData
-  };
-
-  return currentProfile;
-}
-
-
-// --------------------------------------------
-// CLEAR PROFILE AFTER LOGOUT
-// --------------------------------------------
-function clearCurrentProfile() {
-
-  currentProfile = null;
-
-  // Remove only the old insecure cache
-  localStorage.removeItem("predictstor_profile_v1");
-}
-
-
-// --------------------------------------------
-// LISTEN FOR AUTH CHANGES
-// --------------------------------------------
-firebase.auth().onAuthStateChanged(async (user) => {
-
-  if (user) {
-
-    try {
-      await loadProfile();
-
-    } catch (error) {
-
-      console.error(
-        "Unable to load farmer profile:",
-        error
-      );
-
-    }
-
-  } else {
-
-    clearCurrentProfile();
-
-  }
-
-});
-
-function getInitials(value) {
-  if (!value) return "GU";
-
-  return value
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(word => word[0])
-    .join("")
-    .toUpperCase();
-}
-
-
-/* ---------------------------------------------
-   NAVIGATION
---------------------------------------------- */
-
-function navigate(page) {
-  const target = document.getElementById(page);
-
-  if (!target) {
-    showToast("This page is not available.");
-    return;
-  }
-
-  $$(".page").forEach(item => {
-    item.classList.remove("active-page");
-  });
-
-  target.classList.add("active-page");
-
-  $$(".nav-item").forEach(item => {
-    item.classList.toggle("active", item.dataset.page === page);
-  });
-
-  if ($("#pageTitle")) {
-    $("#pageTitle").textContent = pages[page] || "PredicStor";
-  }
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
-
-  if (page === "sensors") drawSensorChart();
-
-  if (page === "prediction") {
-    drawRiskChart();
-    updateOptimizationUI();
-  }
-
-  if (page === "reports") drawReportChart();
-}
-
-$$(".nav-item[data-page]").forEach(button => {
-  button.addEventListener("click", () => {
-    navigate(button.dataset.page);
-  });
-});
-
-$$("[data-page]").forEach(button => {
-  if (!button.classList.contains("nav-item")) {
-    button.addEventListener("click", () => {
-      navigate(button.dataset.page);
-    });
-  }
-});
-
-$("#notificationBtn")?.addEventListener("click", () => {
-  navigate("alerts");
-});
-
-
-/* ---------------------------------------------
-   CHARTS
---------------------------------------------- */
-
-function lineChart(canvasId, datasets, labels) {
-  const canvas = document.getElementById(canvasId);
-
-  if (!canvas) return;
-
-  const width = canvas.clientWidth;
-
-  if (!width) return;
-
-  const height = canvas.clientHeight || 240;
-  const ratio = window.devicePixelRatio || 1;
-
-  canvas.width = width * ratio;
-  canvas.height = height * ratio;
-
-  const ctx = canvas.getContext("2d");
-
-  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-  ctx.clearRect(0, 0, width, height);
-
-  ctx.strokeStyle = "#e7ede9";
-  ctx.lineWidth = 1;
-
-  for (let i = 0; i < 5; i++) {
-    const y = 18 + i * (height - 45) / 4;
-
-    ctx.beginPath();
-    ctx.moveTo(35, y);
-    ctx.lineTo(width - 15, y);
-    ctx.stroke();
-  }
-
-  const colors = ["#13834b", "#7aa9c8", "#d69a22"];
-
-  datasets.forEach((dataset, datasetIndex) => {
-    ctx.beginPath();
-
-    dataset.forEach((value, index) => {
-      const x =
-        35 +
-        index *
-        (width - 50) /
-        Math.max(dataset.length - 1, 1);
-
-      const y =
-        18 +
-        (height - 50) *
-        (1 - Math.max(0, Math.min(value, 100)) / 100);
-
-      if (index === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
-    });
-
-    ctx.strokeStyle = colors[datasetIndex % colors.length];
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  });
-
-  ctx.fillStyle = "#839088";
-  ctx.font = "10px Inter";
-
-  labels.forEach((label, index) => {
-    const x =
-      35 +
-      index *
-      (width - 50) /
-      Math.max(labels.length - 1, 1);
-
-    ctx.fillText(label, x - 8, height - 5);
-  });
-}
-
-function drawEnv() {
-  lineChart(
-    "envChart",
-    [
-      [52, 55, 58, 61, 60, 58, 62, 64, 61, 59, 57, 60, 62],
-      [64, 66, 67, 69, 68, 70, 71, 69, 67, 68, 69, 68, 67]
-    ],
-    ["00", "02", "04", "06", "08", "10", "12", "14", "16", "18", "20", "22", "Now"]
-  );
-}
-
-function drawSensorChart() {
-  lineChart(
-    "sensorChart",
-    [
-      [48, 49, 48, 51, 52, 51, 50, 52, 54, 53, 52, 51, 53],
-      [61, 62, 62, 63, 64, 63, 64, 65, 66, 65, 67, 66, 65]
-    ],
-    ["-60m", "-50m", "-40m", "-30m", "-20m", "-10m", "Now"]
-  );
-}
-
-function drawRiskChart() {
-  const profile = getProfile();
-  let risk = 12;
-
-  if (profile) {
-    risk = calculateRisk(profile);
-  }
-
-  lineChart(
-    "riskChart",
-    [[risk, risk + 3, risk + 5, risk + 9, risk + 13, risk + 18, risk + 23]],
-    ["Now", "D1", "D2", "D3", "D4", "D5", "D6"]
-  );
-}
-
-function drawReportChart() {
-  lineChart(
-    "reportChart",
-    [[30, 42, 39, 51, 57, 68, 76, 84]],
-    ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"]
-  );
-}
-
-
-/* ---------------------------------------------
-   PRODUCT OPTIMIZATION
---------------------------------------------- */
-
-function getRecommendation(product) {
-  const recommendations = {
-    Onion: {
-      temp: "0–4°C for refrigerated storage or controlled ambient storage depending on curing and storage method",
-      humidity: "65–75%",
-      gas: "Keep gas accumulation low with regular ventilation",
-      ventilation: "Moderate, dry airflow",
-      note: "Avoid excess moisture because sprouting and rot risk can increase."
-    },
-
-    Potato: {
-      temp: "4–10°C depending on intended use",
-      humidity: "90–95%",
-      gas: "Maintain fresh air exchange",
-      ventilation: "Moderate airflow",
-      note: "Avoid unsuitable temperatures that can affect quality."
-    },
-
-    Tomato: {
-      temp: "12–20°C depending on maturity",
-      humidity: "85–95%",
-      gas: "Monitor ripening gases",
-      ventilation: "Gentle airflow",
-      note: "Do not overcool immature tomatoes."
-    },
-
-    Carrot: {
-      temp: "0–4°C",
-      humidity: "90–95%",
-      gas: "Maintain clean air",
-      ventilation: "Low to moderate",
-      note: "High humidity helps reduce dehydration."
-    },
-
-    Cabbage: {
-      temp: "0–4°C",
-      humidity: "90–95%",
-      gas: "Fresh air circulation recommended",
-      ventilation: "Moderate",
-      note: "Avoid prolonged heat exposure."
-    },
-
-    Cauliflower: {
-      temp: "0–4°C",
-      humidity: "90–95%",
-      gas: "Fresh air recommended",
-      ventilation: "Moderate",
-      note: "Low temperature storage can extend quality."
-    },
-
-    Garlic: {
-      temp: "0–5°C or suitable dry ambient storage",
-      humidity: "60–70%",
-      gas: "Low accumulation",
-      ventilation: "Dry airflow",
-      note: "Dry conditions are important."
-    },
-
-    Apple: {
-      temp: "0–4°C",
-      humidity: "90–95%",
-      gas: "Ethylene monitoring is useful",
-      ventilation: "Controlled",
-      note: "Storage conditions depend on variety."
-    },
-
-    Other: {
-      temp: "Set after product-specific analysis",
-      humidity: "Set after product-specific analysis",
-      gas: "Monitor gas accumulation",
-      ventilation: "Maintain adequate airflow",
-      note: "Select a specific product profile for more accurate recommendations."
-    }
-  };
-
-  return recommendations[product] || recommendations.Other;
-}
-
-function calculateRisk(profile) {
-  let risk = 8;
-
-  if (sensorData.temperature > 28) risk += 15;
-  if (sensorData.humidity > 80) risk += 12;
-  if (sensorData.gas > 1) risk += 10;
-
-  if (
-    profile.product === "Tomato" &&
-    sensorData.temperature < 10
-  ) {
-    risk += 8;
-  }
-
-  return Math.min(risk, 95);
-}
-
-function updateOptimizationUI() {
-  const profile = getProfile();
-
-  if (!profile) {
-    $("#optimizationSummary").textContent =
-      "Configure your godown and product to receive storage recommendations.";
-
-    $("#predictionProduct").textContent = "Not configured";
-    $("#predictionLocation").textContent = "Location not configured";
-    $("#riskValue").textContent = "--";
-
-    $("#recommendationDetails").textContent =
-      "Configure a product to see recommended targets.";
-
-    return;
-  }
-
-  const recommendation = getRecommendation(profile.product);
-  const risk = calculateRisk(profile);
-
-  $("#heroProduct").textContent = profile.product;
-  $("#heroLocation").textContent = profile.location;
-
-  $("#predictionProduct").textContent = profile.product;
-  $("#predictionLocation").textContent =
-    `${profile.godownName} • ${profile.location}`;
-
-  $("#riskValue").textContent = `${risk}%`;
-
-  $("#optimizationSummary").innerHTML = `
-    <b>${profile.product} storage recommendation</b><br>
-    Location: ${profile.location}<br>
-    Current focus: ${recommendation.note}
-  `;
-
-  $("#recommendationDetails").innerHTML = `
-    <div>
-      <b>Temperature</b>
-      <span>${recommendation.temp}</span>
-    </div>
-    <div>
-      <b>Humidity</b>
-      <span>${recommendation.humidity}</span>
-    </div>
-    <div>
-      <b>Gas / Air Quality</b>
-      <span>${recommendation.gas}</span>
-    </div>
-    <div>
-      <b>Ventilation</b>
-      <span>${recommendation.ventilation}</span>
-    </div>
-    <div>
-      <b>Important Note</b>
-      <span>${recommendation.note}</span>
-    </div>
-  `;
-}
-
-
-/* ---------------------------------------------
-   PROFILE UI
---------------------------------------------- */
-
-function updateProfileUI(user) {
-  const profile = getProfile();
-
-  /* IMPORTANT LOGOUT FIX */
-  const displayName =
-    user
-      ? (profile?.name || user.phoneNumber || "User")
-      : "Guest User";
-
-  const phone =
-    user
-      ? (user.phoneNumber || profile?.phone || "Not available")
-      : "Not logged in";
-
-  const initials = getInitials(displayName);
-
-  $("#userName").textContent = displayName;
-  $("#userRole").textContent =
-    user ? "Farmer" : "Not logged in";
-
-  $("#profileUserName").textContent = displayName;
-  $("#profileUserRole").textContent =
-    user ? "Farmer" : "Not logged in";
-
-  $("#profileUserPhone").textContent = phone;
-
-  $("#topAvatar").textContent = initials;
-  $("#profileAvatar").textContent = initials;
-
-  $("#profileGodownName").textContent =
-    user && profile?.godownName
-      ? profile.godownName
-      : "Not configured";
-
-  if (user && profile) {
-    $("#welcomeTitle").textContent =
-      `Welcome, ${profile.name}`;
-
-    $("#godownSummary").textContent =
-      `${profile.godownName} • ${profile.location} • ${profile.product}`;
-
-    $("#setupFromDashboard").textContent =
-      "Edit My Godown";
-
-    $("#pairedGodownId").textContent =
-      profile.godownId || "Not configured";
-
-    $("#pairedDeviceId").textContent =
-      profile.deviceId || "Not paired";
-
-    if (profile.deviceId) {
-      $("#deviceConnectionStatus").textContent =
-        `● Paired: ${profile.deviceId}`;
-
-      $("#systemStatus").textContent = "System Ready";
-      $("#systemSubStatus").textContent =
-        "Device pairing saved";
-    }
-
-  } else {
-    $("#welcomeTitle").textContent =
-      user
-        ? "Complete your godown setup"
-        : "Your storage is ready";
-
-    $("#godownSummary").textContent =
-      user
-        ? "Add your godown details and stored product."
-        : "Login and configure your godown to begin monitoring.";
-
-    $("#setupFromDashboard").textContent =
-      user ? "Setup My Godown" : "Login to Setup";
-
-    $("#pairedGodownId").textContent =
-      "Not configured";
-
-    $("#pairedDeviceId").textContent =
-      "Not paired";
-
-    $("#deviceConnectionStatus").textContent =
-      "● Device not paired";
-  }
-
-  updateOptimizationUI();
-}
-
-
-/* ---------------------------------------------
-   LOGIN / USER MENU
---------------------------------------------- */
-
-$("#menuBtn")?.addEventListener("click", () => {
-  const user = firebase.auth().currentUser;
-
-  if (user) {
-    $("#loginPanel").classList.add("hidden");
-    $("#userProfileMenu").classList.toggle("hidden");
-  } else {
-    $("#userProfileMenu").classList.add("hidden");
-    $("#loginPanel").classList.remove("hidden");
-  }
-});
-
-$("#closeLoginBtn")?.addEventListener("click", () => {
-  $("#loginPanel").classList.add("hidden");
-});
-
-$("#closeSetupBtn")?.addEventListener("click", () => {
-  $("#setupModal").classList.add("hidden");
-});
-
-
-/* ---------------------------------------------
-   FIREBASE OTP
---------------------------------------------- */
-
-$("#sendOtpBtn")?.addEventListener("click", async () => {
-  const phone = $("#phoneNumber").value.trim();
-
-  if (!phone) {
-    showToast("Enter your mobile number.");
-    return;
-  }
-
-  try {
-    if (!recaptchaVerifier) {
-      recaptchaVerifier =
-        new firebase.auth.RecaptchaVerifier(
-          "recaptcha-container",
-          {
-            size: "normal"
-          }
-        );
-
-      await recaptchaVerifier.render();
-    }
-
-    confirmationResult =
-      await firebase.auth()
-        .signInWithPhoneNumber(
-          phone,
-          recaptchaVerifier
-        );
-
-    $("#otpSection").classList.remove("hidden");
-
-    showToast("OTP sent successfully.");
-
-  } catch (error) {
-    console.error(error);
-
-    showToast(
-      error.message || "OTP could not be sent."
-    );
-  }
-});
-
-$("#verifyOtpBtn")?.addEventListener("click", async () => {
-  const otp = $("#otpCode").value.trim();
-
-  if (!confirmationResult) {
-    showToast("Request OTP first.");
-    return;
-  }
-
-  if (!otp) {
-    showToast("Enter the verification code.");
-    return;
-  }
-
-  try {
-    const result =
-      await confirmationResult.confirm(otp);
-
-    $("#loginPanel").classList.add("hidden");
-    $("#otpSection").classList.add("hidden");
-
-    confirmationResult = null;
-
-    updateProfileUI(result.user);
-
-    const profile = getProfile();
-
-    if (!profile) {
-      openSetup();
-    }
-
-    showToast("Login successful.");
-
-  } catch (error) {
-    console.error(error);
-    showToast("Invalid OTP. Try again.");
-  }
-});
-
-
-/* ---------------------------------------------
-   PROFILE / GODOWN SETUP
---------------------------------------------- */
-
-function openSetup() {
-  const user = firebase.auth().currentUser;
-
-  if (!user) {
-    $("#loginPanel").classList.remove("hidden");
-    return;
-  }
-
-  const profile = getProfile();
-
-  if (profile) {
-    $("#setupName").value = profile.name || "";
-    $("#setupUserId").value = profile.userId || "";
-    $("#setupGodownName").value =
-      profile.godownName || "";
-    $("#setupGodownId").value =
-      profile.godownId || "";
-    $("#setupLocation").value =
-      profile.location || "";
-    $("#setupProduct").value =
-      profile.product || "";
-  }
-
-  $("#setupModal").classList.remove("hidden");
-}
-
-$("#setupFromDashboard")?.addEventListener("click", () => {
-  if (!firebase.auth().currentUser) {
-    $("#loginPanel").classList.remove("hidden");
-    return;
-  }
-
-  openSetup();
-});
-
-$("#editProfileBtn")?.addEventListener("click", () => {
-  $("#userProfileMenu").classList.add("hidden");
-  openSetup();
-});
-
-$("#saveProfileBtn")?.addEventListener("click", () => {
-  const user = firebase.auth().currentUser;
-
-  if (!user) {
-    showToast("Login first.");
-    return;
-  }
-
-  const profile = {
-    name: $("#setupName").value.trim(),
-    userId: $("#setupUserId").value.trim(),
-    phone: user.phoneNumber || "",
-    godownName: $("#setupGodownName").value.trim(),
-    godownId: $("#setupGodownId").value.trim(),
-    location: $("#setupLocation").value.trim(),
-    product: $("#setupProduct").value,
-    deviceId: getProfile()?.deviceId || ""
-  };
-
-  if (
-    !profile.name ||
-    !profile.userId ||
-    !profile.godownName ||
-    !profile.godownId ||
-    !profile.location ||
-    !profile.product
-  ) {
-    showToast("Complete all profile and godown details.");
-    return;
-  }
-
-  saveProfile(profile);
-
-  $("#setupModal").classList.add("hidden");
-
-  updateProfileUI(user);
-  renderSensors();
-
-  showToast("Profile and godown saved.");
-});
-
-
-/* ---------------------------------------------
-   DEVICE PAIRING
---------------------------------------------- */
-
-$("#pairDeviceBtn")?.addEventListener("click", () => {
-  const user = firebase.auth().currentUser;
-
-  if (!user) {
-    showToast("Login first.");
-    return;
-  }
-
-  const profile = getProfile();
-
-  if (!profile) {
-    showToast("Complete godown setup first.");
-    openSetup();
-    return;
-  }
-
-  const deviceId =
-    $("#deviceIdInput").value.trim();
-
-  if (!deviceId) {
-    showToast("Enter a device or Arduino ID.");
-    return;
-  }
-
-  profile.deviceId = deviceId;
-
-  saveProfile(profile);
-
-  updateProfileUI(user);
-
-  $("#deviceIdInput").value = "";
-
-  showToast(
-    `Device ${deviceId} paired successfully.`
-  );
-});
-
-
-/* ---------------------------------------------
-   LOGOUT
---------------------------------------------- */
-
-$("#logoutBtn")?.addEventListener("click", async () => {
-  try {
-    await firebase.auth().signOut();
-
-    $("#userProfileMenu").classList.add("hidden");
-
-    /* UI RESET */
-    updateProfileUI(null);
-
-    showToast("Logged out successfully.");
-
-    navigate("dashboard");
-
-  } catch (error) {
-    console.error(error);
-    showToast("Logout failed.");
-  }
-});
-
-
-firebase.auth().onAuthStateChanged(user => {
-  $("#userProfileMenu")?.classList.add("hidden");
-
-  updateProfileUI(user);
-});
-
-
-/* ---------------------------------------------
-   SENSOR UI
---------------------------------------------- */
-
-function renderSensors() {
-  const profile = getProfile();
-
-  const paired =
-    Boolean(profile?.deviceId);
-
-  const data = [
-    [
-      "Temperature",
-      `${sensorData.temperature.toFixed(1)}°C`,
-      "Optimal",
-      "🌡"
-    ],
-    [
-      "Humidity",
-      `${Math.round(sensorData.humidity)}%`,
-      "Monitoring",
-      "💧"
-    ],
-    [
-      "Gas Level",
-      `${sensorData.gas.toFixed(2)} ppm`,
-      "Monitoring",
-      "◉"
-    ],
-    [
-      "Airflow",
-      `${sensorData.airflow.toFixed(1)} m/s`,
-      "Normal",
-      "≋"
-    ],
-    [
-      "Battery",
-      `${Math.round(sensorData.battery)}%`,
-      "Solar Ready",
-      "☀"
-    ],
-    [
-      "Device",
-      paired ? "Paired" : "Demo",
-      paired ? profile.deviceId : "Not connected",
-      "▣"
-    ]
+  const DEFAULT_ALERTS = [
+    { id: "alert-gas-demo", level: "warning", title: "Gas observation requires review", desc: "A simulated gas trend is approaching the local watch range. Verify airflow before taking action.", time: "Demo · 12 min ago", field: "North field", crop: "Onion", status: "open", demo: true },
+    { id: "alert-humidity-demo", level: "warning", title: "Humidity monitoring reminder", desc: "The simulated humidity trend is being compared with the crop profile. No physical sensor reading is connected.", time: "Demo · 1 hr ago", field: "North field", crop: "Onion", status: "open", demo: true },
+    { id: "alert-ready-demo", level: "info", title: "Sensor workspace ready", desc: "Register an ESP-12E device ID when the field kit is available. Pairing does not claim a live connection.", time: "Demo · 2 hr ago", field: "North field", crop: "Onion", status: "resolved", demo: true, resolvedAt: nowIso() }
   ];
+  const DEFAULT_EVENTS = [
+    { id: "event-system", type: "system", title: "Demo workspace opened", detail: "Local workspace initialized. No live telemetry is connected.", timestamp: nowIso() },
+    { id: "event-observation", type: "observation", title: "Sensor observation available", detail: "Simulated temperature, humidity, gas, and airflow values are shown with an explicit demo label.", timestamp: new Date(Date.now() - 3600000).toISOString() },
+    { id: "event-trace", type: "system", title: "Traceability record prepared", detail: "Field-to-storage record boundary is ready for future farmer-owned events.", timestamp: new Date(Date.now() - 7200000).toISOString() }
+  ];
+  const EMPTY_WORKSPACE = () => ({ profile: null, pairing: null, observations: [], alerts: [], events: [], traceEvents: [], settings: safeParse(localStorage.getItem(SETTINGS_KEY), { tempThreshold: 28, humidityThreshold: 75, localNotifications: true }) });
+  const state = { session: null, workspace: EMPTY_WORKSPACE(), alertFilter: "open", historyFilter: "all" };
 
-  const sensorCards = $("#sensorCards");
-
-  if (!sensorCards) return;
-
-  sensorCards.innerHTML = data.map(item => `
-    <div class="metric-card">
-      <div style="font-size:22px;margin-bottom:7px">${item[3]}</div>
-      <small>${item[0]}</small>
-      <strong>${item[1]}</strong>
-      <span>${item[2]}</span>
-    </div>
-  `).join("");
-}
-
-
-/* ---------------------------------------------
-   DASHBOARD SENSOR VALUES
---------------------------------------------- */
-
-function updateDashboardSensors() {
-  $("#tempVal").textContent =
-    `${sensorData.temperature.toFixed(1)}°C`;
-
-  $("#humidVal").textContent =
-    `${Math.round(sensorData.humidity)}%`;
-
-  $("#gasVal").textContent =
-    `${sensorData.gas.toFixed(2)} ppm`;
-
-  $("#airflowVal").textContent =
-    `${sensorData.airflow.toFixed(1)} m/s`;
-
-  $("#batteryValue").textContent =
-    `${Math.round(sensorData.battery)}%`;
-
-  $("#tempStatus").textContent =
-    sensorData.temperature > 28
-      ? "Watch temperature"
-      : "Optimal";
-
-  $("#humidStatus").textContent =
-    sensorData.humidity > 75
-      ? "Humidity watch"
-      : "Optimal";
-
-  $("#gasStatus").textContent =
-    sensorData.gas > 1
-      ? "Gas warning"
-      : "Normal";
-
-  $("#airflowStatus").textContent =
-    sensorData.airflow < 1
-      ? "Low airflow"
-      : "Normal";
-}
-
-
-/* ---------------------------------------------
-   ALERTS
---------------------------------------------- */
-
-function renderAlerts() {
-  const recent = $("#recentAlerts");
-  const all = $("#allAlerts");
-
-  const buildAlert = alert => `
-    <div class="alert-row">
-      <div class="alert-icon">
-        ${
-          alert.level === "good"
-            ? "✓"
-            : alert.level === "info"
-            ? "i"
-            : "!"
-        }
-      </div>
-
-      <div style="flex:1">
-        <b>${alert.title}</b>
-        <small>${alert.desc} • ${alert.time}</small>
-      </div>
-    </div>
-  `;
-
-  if (recent) {
-    recent.innerHTML =
-      alerts.slice(0, 4)
-        .map(buildAlert)
-        .join("");
+  function demoProfile() {
+    return { name: "Demo Farmer", phone: "+91 98765 43210", farmerId: "BN-DEMO-001", farmName: "Shakti Farm", fieldName: "North field", crop: "Onion", location: "Nashik", district: "Nashik", state: "Maharashtra", coordinates: "20.0059, 73.7897", cultivation: "Kharif · drip irrigation", godown: "Shakti store · demo", savedAt: nowIso() };
+  }
+  function workspaceKey() { return state.session?.mode === "firebase" && state.session.uid ? state.session.uid : "demo"; }
+  function storageKey() { return `${STORAGE_PREFIX}${workspaceKey()}`; }
+  function saveWorkspace() { try { localStorage.setItem(storageKey(), JSON.stringify(state.workspace)); } catch (error) { console.warn("Local workspace could not be saved", error); } }
+  function loadWorkspace() {
+    const saved = safeParse(localStorage.getItem(storageKey()), null);
+    if (saved) {
+      state.workspace = { ...EMPTY_WORKSPACE(), ...saved, settings: { ...EMPTY_WORKSPACE().settings, ...(saved.settings || {}) } };
+    } else {
+      state.workspace = EMPTY_WORKSPACE();
+      if (state.session?.mode === "demo") {
+        state.workspace.profile = demoProfile();
+        state.workspace.alerts = DEFAULT_ALERTS.map((item) => ({ ...item }));
+        state.workspace.events = DEFAULT_EVENTS.map((item) => ({ ...item }));
+        state.workspace.traceEvents = [{ id: "trace-field", title: "Field registered", detail: "Farmer-owned field record prepared", status: "done" }, { id: "trace-monitoring", title: "Monitoring workspace", detail: "Demo observation layer available", status: "done" }];
+        saveWorkspace();
+      }
+    }
+  }
+  function addEvent(type, title, detail) {
+    state.workspace.events.unshift({ id: `event-${Date.now()}-${Math.random().toString(16).slice(2)}`, type, title, detail, timestamp: nowIso() });
+    saveWorkspace();
   }
 
-  if (all) {
-    all.innerHTML =
-      alerts.map(buildAlert).join("");
+  function toast(message) {
+    const el = $("#toast");
+    if (!el) return;
+    el.textContent = message;
+    el.classList.add("show");
+    window.clearTimeout(toast.timer);
+    toast.timer = window.setTimeout(() => el.classList.remove("show"), 3000);
+  }
+  function openModal(id) { const el = $(`#${id}`); if (el) { el.classList.remove("hidden"); document.body.style.overflow = "hidden"; } }
+  function closeModal(id) { const el = $(`#${id}`); if (el) { el.classList.add("hidden"); document.body.style.overflow = ""; } }
+  function closeAllOverlays() { closeModal("loginModal"); closeModal("profileModal"); $("#profilePopover")?.classList.add("hidden"); document.body.style.overflow = ""; }
+  function openLogin() { closeAllOverlays(); text("#loginMessage", ""); $("#otpSection")?.classList.add("hidden"); $("#phoneLoginForm")?.classList.remove("hidden"); openModal("loginModal"); }
+  function openProfileForm() {
+    if (!state.session) { openLogin(); return; }
+    closeAllOverlays();
+    const profile = state.workspace.profile || {};
+    ["profileName", "profileFarmerId", "profileFarmName", "profileFieldName", "profileLocation", "profileDistrict", "profileState", "profileCoordinates", "profileCultivation", "profileGodown"].forEach((id) => { const el = $(`#${id}`); if (el) el.value = profile[id.replace("profile", "").replace(/^./, (char) => char.toLowerCase())] || ""; });
+    const phone = $("#profilePhone"); if (phone) phone.value = profile.phone || state.session.phone || "";
+    const crop = $("#profileCrop"); if (crop) crop.value = profile.crop || "";
+    text("#profileFormMessage", "");
+    openModal("profileModal");
   }
 
-  const warningCount =
-    alerts.filter(item =>
-      item.level === "warning"
-    ).length;
-
-  if ($("#alertBadge")) {
-    $("#alertBadge").textContent =
-      warningCount;
-  }
-}
-
-
-/* ---------------------------------------------
-   BATCHES
---------------------------------------------- */
-
-function renderBatches(filter = "") {
-  const table = $("#batchTable");
-
-  if (!table) return;
-
-  const query = filter.toLowerCase();
-
-  const rows =
-    batches.filter(row =>
-      row.join(" ")
-        .toLowerCase()
-        .includes(query)
-    );
-
-  table.innerHTML = rows.map(row => `
-    <tr>
-      <td><b>${row[0]}</b></td>
-      <td>${row[1]}</td>
-      <td>${row[2]}</td>
-      <td>${row[3]}</td>
-      <td>${row[4]}</td>
-      <td>${row[5]}</td>
-      <td>
-        <span class="status ${
-          row[6] === "Healthy"
-            ? "good"
-            : "watch"
-        }">
-          ${row[6]}
-        </span>
-      </td>
-    </tr>
-  `).join("");
-}
-
-$("#batchSearch")?.addEventListener("input", event => {
-  renderBatches(event.target.value);
-});
-
-$("#newBatch")?.addEventListener("click", () => {
-  const profile = getProfile();
-
-  if (!profile) {
-    showToast("Configure your godown first.");
-    return;
+  function setAvatar(selector, value) { const el = $(selector); if (el) el.textContent = initials(value); }
+  function renderAuth() {
+    const profile = state.workspace.profile;
+    const loggedIn = Boolean(state.session);
+    const name = profile?.name || (loggedIn ? "Farmer workspace" : "Guest workspace");
+    const role = loggedIn ? (state.session.mode === "demo" ? "Demo farmer · local" : "Farmer · verified mobile") : "Login to begin";
+    setAvatar("#topAvatar", name); setAvatar("#sidebarAvatar", name); setAvatar("#settingsAvatar", name); setAvatar("#popoverAvatar", name);
+    text("#topName", profile?.name || (loggedIn ? "Farmer" : "Guest")); text("#topRole", loggedIn ? role : "Not signed in");
+    text("#sidebarName", name); text("#sidebarRole", role); text("#popoverName", name); text("#popoverRole", role);
+    text("#popoverPhone", profile?.phone || state.session?.phone || "Not signed in"); text("#popoverFarmerId", profile?.farmerId || "Pending setup");
+    text("#settingsName", name); text("#settingsRole", loggedIn ? role : "Farmer profile locked"); text("#settingsPhone", profile?.phone || state.session?.phone || "Not signed in");
+    text("#settingsFarmerId", profile?.farmerId || "—"); text("#settingsFarm", profile ? `${profile.farmName || "Farm"} · ${profile.fieldName || "Field"}` : "—"); text("#settingsLocation", profile ? [profile.location, profile.district, profile.state].filter(Boolean).join(", ") || "Not saved" : "—");
+    const profilePill = $("#profileStatusPill"); if (profilePill) { profilePill.textContent = loggedIn ? (profile ? "Profile ready" : "Setup pending") : "Signed out"; profilePill.className = `pill ${loggedIn && profile ? "pill-green" : "pill-neutral"}`; }
+    const loginButton = $("#popoverLoginBtn"); const logoutButton = $("#popoverLogoutBtn"); if (loginButton) loginButton.classList.toggle("hidden", loggedIn); if (logoutButton) logoutButton.classList.toggle("hidden", !loggedIn);
+    const strip = $("#authStrip"); if (strip) strip.classList.toggle("hidden", false);
+    text("#authStripText", loggedIn ? (state.session.mode === "demo" ? "Local demo workspace · data stays in this browser." : "Verified farmer workspace · profile data is scoped to this account.") : "This view is locked until a farmer signs in.");
+    const stripButton = $("#authStripBtn"); if (stripButton) stripButton.textContent = loggedIn ? "Edit profile" : "Sign in";
+    const dot = $("#connectionDot"); if (dot) dot.className = `status-dot ${loggedIn ? "offline" : "offline"}`;
+    text("#connectionLabel", loggedIn ? "Offline ready" : "Offline ready"); text("#connectionSubtext", loggedIn ? "Local workspace is available." : "Local workspace is available.");
   }
 
-  const batchNumber =
-    `PS-${Date.now().toString().slice(-6)}`;
-
-  batches.unshift([
-    batchNumber,
-    profile.product,
-    "1.0 t",
-    new Date().toLocaleDateString(),
-    `${sensorData.temperature.toFixed(1)}°C`,
-    `${Math.round(sensorData.humidity)}%`,
-    "Healthy"
-  ]);
-
-  renderBatches();
-
-  showToast("Demo batch added.");
-});
-
-
-/* ---------------------------------------------
-   CONTROL TEST
---------------------------------------------- */
-
-$("#ventBtn")?.addEventListener("click", () => {
-  const button = $("#ventBtn");
-
-  if (button.disabled) return;
-
-  button.disabled = true;
-  button.textContent = "Ventilation Running";
-
-  $("#ventState").textContent = "Running";
-
-  showToast("Demo ventilation cycle started.");
-
-  setTimeout(() => {
-    button.disabled = false;
-    button.textContent = "Test Ventilation";
-
-    $("#ventState").textContent = "Standby";
-
-    showToast("Demo ventilation cycle completed.");
-  }, 5000);
-});
-
-
-/* ---------------------------------------------
-   SETTINGS
---------------------------------------------- */
-
-$("#saveSettings")?.addEventListener("click", () => {
-  const settings = {
-    temp: $("#tempThreshold").value,
-    humidity: $("#humidityThreshold").value,
-    autoVentilation:
-      $("#autoVentilation").checked
-  };
-
-  localStorage.setItem(
-    "predictstor_settings",
-    JSON.stringify(settings)
-  );
-
-  showToast("Settings saved.");
-});
-
-
-/* ---------------------------------------------
-   DOWNLOAD / EXPORT PLACEHOLDERS
---------------------------------------------- */
-
-$("#downloadBtn")?.addEventListener("click", () => {
-  showToast("Report export will be connected later.");
-});
-
-$("#csvBtn")?.addEventListener("click", () => {
-  showToast("CSV export will be connected later.");
-});
-
-
-/* ---------------------------------------------
-   LIVE DEMO SENSOR SIMULATION
---------------------------------------------- */
-
-function simulateSensors() {
-  sensorData.temperature =
-    24 + Math.random() * 3;
-
-  sensorData.humidity =
-    66 + Math.random() * 8;
-
-  sensorData.gas =
-    0.7 + Math.random() * 0.4;
-
-  sensorData.airflow =
-    1.4 + Math.random() * 0.9;
-
-  sensorData.battery =
-    Math.max(
-      50,
-      Math.min(
-        100,
-        sensorData.battery +
-        (Math.random() * 2 - 1)
-      )
-    );
-
-  updateDashboardSensors();
-  renderSensors();
-
-  const profile = getProfile();
-
-  if (profile) {
-    updateOptimizationUI();
-  }
-}
-
-
-/* ---------------------------------------------
-   INITIALIZE
---------------------------------------------- */
-
-renderAlerts();
-renderBatches();
-renderSensors();
-drawEnv();
-drawSensorChart();
-updateDashboardSensors();
-updateOptimizationUI();
-
-window.addEventListener("resize", () => {
-  drawEnv();
-
-  if ($("#sensors").classList.contains("active-page")) {
-    drawSensorChart();
+  function renderSelectOptions() {
+    const profile = state.workspace.profile;
+    const selects = [$("#profileCrop"), $("#observationCrop")];
+    selects.forEach((select) => { if (!select) return; const current = select.value; select.innerHTML = `<option value="">Select crop</option>${CROPS.map((crop) => `<option value="${crop}">${crop}</option>`).join("")}`; select.value = current || profile?.crop || ""; });
+    const fields = [$("#pairField"), $("#observationField")];
+    fields.forEach((select) => { if (!select) return; const current = select.value; select.innerHTML = `<option value="">Select field</option>${profile ? `<option value="${escapeHtml(profile.fieldName || "Primary field")}">${escapeHtml(profile.fieldName || "Primary field")} · ${escapeHtml(profile.farmName || "Farm")}</option>` : ""}`; select.value = current || profile?.fieldName || ""; });
   }
 
-  if ($("#prediction").classList.contains("active-page")) {
-    drawRiskChart();
+  function renderDashboard() {
+    const profile = state.workspace.profile; const alerts = state.workspace.alerts || []; const openAlerts = alerts.filter((item) => item.status === "open");
+    text("#welcomeName", profile?.name ? profile.name.split(" ")[0] : "farmer"); text("#welcomeSummary", profile ? `${profile.fieldName || "Your field"} · ${profile.crop || "Crop not selected"} · ${profile.location || "Location not saved"}. Values marked demo are not live telemetry.` : "Sign in to open your private crop workspace. Demo values are never presented as live telemetry.");
+    text("#statField", profile?.fieldName || "Not configured"); text("#statLocation", profile ? [profile.location, profile.district].filter(Boolean).join(" · ") || "Location not saved" : "Location not saved");
+    const health = profile ? "Monitor" : "—"; text("#statHealth", health); text("#statHealthFoot", profile ? "Demo indicator · not diagnosis" : "No assessment"); text("#statAlerts", profile ? openAlerts.length : 0); text("#statAlertsFoot", openAlerts.length ? "Review recommended actions" : "No active risk event"); text("#statSensor", state.workspace.pairing ? "Registered" : "Disconnected"); text("#statSensorFoot", state.workspace.pairing ? "Gateway not verified" : "Integration ready");
+    text("#fieldPanelTitle", profile?.fieldName || "Your primary field"); text("#fieldPanelBadge", profile ? "Workspace ready" : "Not configured"); text("#fieldCrop", profile ? `${profile.crop || "Crop not selected"} · ${profile.farmName || "Farm"}` : "Select a crop to begin"); text("#fieldMeta", profile ? `${profile.location || "Location not saved"} · ${profile.state || "State not saved"}` : "Field and cultivation details will appear here."); text("#fieldDistrict", profile?.district || "—"); text("#fieldCultivation", profile?.cultivation || "—"); text("#fieldUpdated", profile?.savedAt ? formatDate(profile.savedAt) : "—"); text("#healthRingValue", profile ? "—" : "—");
+    const container = $("#dashboardAlerts"); if (container) { container.innerHTML = openAlerts.length ? openAlerts.slice(0, 3).map(alertMini).join("") : `<div class="empty-state"><strong>No open alerts</strong><span>New signals will appear here after verified data is connected.</span></div>`; }
+    text("#navAlertBadge", profile ? openAlerts.length : 0); text("#topAlertBadge", profile ? openAlerts.length : 0); $("#topAlertBadge")?.classList.toggle("hidden", !openAlerts.length);
+  }
+  function alertMini(item) { return `<div class="alert-item ${escapeHtml(item.level)}"><span class="alert-item-indicator"></span><div><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.desc)}</p><small>${escapeHtml(item.time)} · ${escapeHtml(item.field || "Field not set")}</small></div></div>`; }
+
+  function sensorCard(title, glyph, value, foot) { return `<article class="sensor-card"><div class="sensor-card-head"><span><i class="sensor-glyph">${glyph}</i>${title}</span><span class="status-dot offline"></span></div><strong class="sensor-card-value">${value}</strong><div class="sensor-card-footer"><span>${foot}</span><span class="pill pill-amber">Demo data</span></div></article>`; }
+  function renderSensors() {
+    const cards = $("#sensorCards"); if (cards) cards.innerHTML = [sensorCard("Temperature", "°", "24.6°C", "Simulated value"), sensorCard("Humidity", "%", "68%", "Simulated value"), sensorCard("Gas", "≈", "0.82", "No calibrated feed"), sensorCard("Airflow", "↝", "1.8 m/s", "Simulated value")].join("");
+    const result = $("#pairingResult"); if (result) result.innerHTML = state.workspace.pairing ? `<span class="status-dot offline"></span><div><strong>${escapeHtml(state.workspace.pairing.deviceId)} · registered locally</strong><p>Field: ${escapeHtml(state.workspace.pairing.field)} · Hardware connection not verified.</p></div>` : `<span class="status-dot offline"></span><div><strong>Node not paired</strong><p>Waiting for a local device ID.</p></div>`;
+    const deviceInput = $("#deviceId"); if (deviceInput && state.workspace.pairing && !deviceInput.value) deviceInput.value = state.workspace.pairing.deviceId;
+  }
+  function renderIntelligence() {
+    const profile = state.workspace.profile; const crop = profile?.crop; const rule = CROP_PROFILES[crop] || null;
+    text("#intelligenceCrop", crop || "Select a crop"); text("#intelligenceLocation", profile ? [profile.fieldName, profile.location].filter(Boolean).join(" · ") : "Set up a field to see the right profile."); text("#riskScore", profile ? "—" : "—"); text("#guidanceHeadline", profile ? "Rule-based field guidance" : "No crop profile yet"); text("#guidanceBody", profile ? "This is a crop profile reference, not a diagnosis or a live risk score. Verify conditions locally before acting." : "Verified crop rules can be added per crop. This demo does not infer a disease or live risk.");
+    const pill = $("#riskPill"); if (pill) { pill.textContent = profile ? "Guidance available" : "No assessment"; pill.className = `pill ${profile ? "pill-green" : "pill-neutral"}`; }
+    const rec = $("#recommendationDetails"); if (rec) rec.innerHTML = rule ? `<div class="recommendation-row"><span>⌁</span><div><strong>Temperature reference</strong><small>${escapeHtml(rule.temp)}</small></div></div><div class="recommendation-row"><span>◌</span><div><strong>Humidity reference</strong><small>${escapeHtml(rule.humidity)}</small></div></div><div class="recommendation-row"><span>i</span><div><strong>Crop note</strong><small>${escapeHtml(rule.note)}</small></div></div>` : `<div class="empty-state"><strong>Choose a crop in Settings</strong><span>Crop-specific guidance will appear here.</span></div>`;
+  }
+  function renderAlerts() {
+    const alerts = state.workspace.alerts || []; const open = alerts.filter((item) => item.status === "open"); const resolved = alerts.filter((item) => item.status === "resolved");
+    text("#openAlertCount", open.length); text("#resolvedAlertCount", resolved.length);
+    const list = $("#alertsList"); if (!list) return;
+    const visible = state.alertFilter === "all" ? alerts : state.alertFilter === "resolved" ? resolved : open;
+    list.innerHTML = visible.length ? visible.map(alertRecord).join("") : `<div class="panel empty-state"><strong>${state.alertFilter === "resolved" ? "No resolved alerts yet" : "No open alerts"}</strong><span>There is no alert state to show for this filter. Live alerts remain integration-ready.</span></div>`;
+  }
+  function alertRecord(item) { const resolved = item.status === "resolved"; return `<article class="alert-record"><span class="alert-record-marker ${escapeHtml(item.level)}"></span><div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.desc)}</p><div class="alert-meta"><span>${escapeHtml(item.time)}</span><span>${escapeHtml(item.field || "Field not set")}</span><span>${escapeHtml(item.crop || "Crop not set")}</span><span class="pill ${resolved ? "pill-green" : item.level === "warning" ? "pill-amber" : "pill-neutral"}">${resolved ? "Resolved" : item.demo ? "Demo signal" : "Open"}</span></div></div><div class="alert-actions"><small>${resolved ? `Resolved ${formatDate(item.resolvedAt)}` : "Action required"}</small>${resolved ? "" : `<button class="btn btn-secondary resolve-alert" data-alert-id="${escapeHtml(item.id)}" type="button">Mark resolved</button>`}</div></article>`; }
+
+  function renderHistory() {
+    const events = state.workspace.events || []; const visible = state.historyFilter === "all" ? events : events.filter((item) => item.type === state.historyFilter);
+    const list = $("#historyList"); if (!list) return; list.innerHTML = visible.length ? visible.map((event) => `<article class="history-item"><time>${formatTime(event.timestamp)}</time><div class="history-item-body"><strong>${escapeHtml(event.title)}</strong><p>${escapeHtml(event.detail)}</p><span class="history-item-tag">${escapeHtml(event.type)}</span></div></article>`).join("") : `<div class="empty-state"><strong>No events match this filter</strong><span>Actions and observations will appear here as you use the workspace.</span></div>`;
+  }
+  function renderTraceability() {
+    const profile = state.workspace.profile; text("#traceabilityTitle", profile ? `${profile.fieldName || "Primary field"} · ${profile.crop || "Crop not selected"}` : "Set up a field to begin"); text("#traceabilitySubtitle", profile ? `${profile.farmName || "Farm"} · ${[profile.location, profile.district, profile.state].filter(Boolean).join(", ") || "Location not saved"}` : "Your farmer-owned record will appear here.");
+    const steps = [{ title: "Field", detail: profile ? "Registered" : "Awaiting setup", done: Boolean(profile) }, { title: "Crop", detail: profile?.crop || "Awaiting crop", done: Boolean(profile?.crop) }, { title: "Monitoring", detail: profile ? "Workspace ready" : "Integration ready", done: Boolean(profile) }, { title: "Actions", detail: state.workspace.events?.some((e) => e.type === "action") ? "Recorded" : "Future event", done: state.workspace.events?.some((e) => e.type === "action") }, { title: "Harvest", detail: "Future record", done: false }, { title: "Storage / linkage", detail: "Not connected", done: false }];
+    const timeline = $("#traceabilityTimeline"); if (timeline) timeline.innerHTML = steps.map((step) => `<div class="trace-step ${step.done ? "" : "locked"}"><strong>${step.title}</strong><span>${step.detail}</span></div>`).join("");
+  }
+  function renderSettings() {
+    const settings = state.workspace.settings || {}; const temp = $("#tempThreshold"); const humidity = $("#humidityThreshold"); const notifications = $("#localNotifications"); if (temp) temp.value = settings.tempThreshold ?? 28; if (humidity) humidity.value = settings.humidityThreshold ?? 75; if (notifications) notifications.checked = settings.localNotifications !== false;
+  }
+  function renderAll() { renderAuth(); renderSelectOptions(); renderDashboard(); renderSensors(); renderIntelligence(); renderAlerts(); renderHistory(); renderTraceability(); renderSettings(); drawAllCharts(); }
+
+  function drawChart(canvasId, dataSets, colors) {
+    const canvas = $(`#${canvasId}`); if (!canvas || !canvas.offsetWidth) return; const width = canvas.offsetWidth; const height = Number(canvas.getAttribute("height")) || 220; const ratio = window.devicePixelRatio || 1; canvas.width = width * ratio; canvas.height = height * ratio; canvas.style.height = `${height}px`; const ctx = canvas.getContext("2d"); ctx.setTransform(ratio, 0, 0, ratio, 0, 0); ctx.clearRect(0, 0, width, height); const pad = { top: 15, right: 12, bottom: 22, left: 22 }; ctx.strokeStyle = "#e8efea"; ctx.lineWidth = 1; for (let i = 0; i < 4; i += 1) { const y = pad.top + i * ((height - pad.top - pad.bottom) / 3); ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(width - pad.right, y); ctx.stroke(); } dataSets.forEach((values, setIndex) => { const max = 100; ctx.beginPath(); values.forEach((value, index) => { const x = pad.left + index * ((width - pad.left - pad.right) / Math.max(values.length - 1, 1)); const y = pad.top + (height - pad.top - pad.bottom) * (1 - Math.max(0, Math.min(value, max)) / max); if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }); ctx.strokeStyle = colors[setIndex]; ctx.lineWidth = 2; ctx.stroke(); }); ctx.fillStyle = "#91a097"; ctx.font = "10px DM Sans"; ["-12h", "-8h", "-4h", "Now"].forEach((label, index, labels) => { const x = pad.left + index * ((width - pad.left - pad.right) / (labels.length - 1)); ctx.fillText(label, x - 10, height - 5); }); }
+  function drawAllCharts() { drawChart("dashboardChart", [[62, 64, 66, 65, 68, 67, 68, 69, 68], [48, 48, 50, 51, 52, 51, 52, 53, 52]], ["#168255", "#5d96bc"]); drawChart("sensorChart", [[61, 62, 61, 64, 63, 65, 64, 66, 65], [45, 46, 48, 47, 49, 50, 49, 51, 50]], ["#168255", "#c69446"]); }
+
+  function navigate(page) { const target = $(`#${page}`); if (!target) return; $$(".page").forEach((item) => item.classList.remove("active-page")); target.classList.add("active-page"); $$(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.page === page)); text("#pageTitle", PAGE_TITLES[page] || "Field overview"); $("#appShell")?.classList.remove("nav-open"); window.scrollTo({ top: 0, behavior: "smooth" }); window.setTimeout(drawAllCharts, 30); }
+
+  async function saveProfile(profile) {
+    state.workspace.profile = { ...(state.workspace.profile || {}), ...profile, savedAt: nowIso() }; saveWorkspace(); addEvent("system", "Farmer profile saved", `${state.workspace.profile.name} updated the farmer-owned field profile.`);
+    if (state.session?.mode === "firebase" && firebaseDb && firebase.auth().currentUser) {
+      try { await firebaseDb.collection("farmers").doc(firebase.auth().currentUser.uid).set({ ...state.workspace.profile, uid: firebase.auth().currentUser.uid, phone: firebase.auth().currentUser.phoneNumber || state.workspace.profile.phone, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); toast("Profile saved to the browser and Firebase."); } catch (error) { console.warn("Firebase profile save failed", error); toast("Profile saved locally; Firebase sync is unavailable."); }
+    } else toast("Farmer profile saved locally.");
+    closeModal("profileModal"); renderAll();
+  }
+  async function loadFirebaseProfile(user) { if (!firebaseDb) return null; try { const doc = await firebaseDb.collection("farmers").doc(user.uid).get(); return doc.exists ? { uid: user.uid, ...doc.data(), phone: user.phoneNumber || doc.data().phone } : null; } catch (error) { console.warn("Firebase profile load failed", error); return null; } }
+
+  async function signOut() {
+    try { if (state.session?.mode === "firebase" && firebaseReady) await firebase.auth().signOut(); } catch (error) { console.warn("Firebase sign out failed", error); }
+    state.session = null; state.workspace = EMPTY_WORKSPACE(); closeAllOverlays(); navigate("dashboard"); renderAll(); toast("You have been logged out. Private farmer information is cleared from view.");
   }
 
-  if ($("#reports").classList.contains("active-page")) {
-    drawReportChart();
-  }
-});
+  function bindEvents() {
+    $$('[data-page]').forEach((button) => button.addEventListener("click", () => navigate(button.dataset.page)));
+    $("#mobileMenuBtn")?.addEventListener("click", () => $("#appShell")?.classList.add("nav-open")); $("#mobileCloseNav")?.addEventListener("click", () => $("#appShell")?.classList.remove("nav-open")); $("#mobileBackdrop")?.addEventListener("click", () => $("#appShell")?.classList.remove("nav-open"));
+    [$("#topProfileBtn"), $("#sidebarProfileBtn")].forEach((button) => button?.addEventListener("click", () => $("#profilePopover")?.classList.toggle("hidden")));
+    $("#popoverLoginBtn")?.addEventListener("click", openLogin); $("#popoverLogoutBtn")?.addEventListener("click", signOut); $("#popoverEditBtn")?.addEventListener("click", () => { $("#profilePopover")?.classList.add("hidden"); state.session ? (state.workspace.profile ? navigate("settings") : openProfileForm()) : openLogin(); });
+    $("#topAlertBtn")?.addEventListener("click", () => navigate("alerts")); $("#authStripBtn")?.addEventListener("click", () => state.session ? openProfileForm() : openLogin()); $("#dashboardSetupBtn")?.addEventListener("click", () => state.session ? openProfileForm() : openLogin()); $("#editProfilePageBtn")?.addEventListener("click", openProfileForm); $("#settingsLogoutBtn")?.addEventListener("click", signOut);
+    $$('[data-close-modal]').forEach((button) => button.addEventListener("click", () => closeModal(button.dataset.closeModal)));
+    $$(".modal").forEach((modal) => modal.addEventListener("click", (event) => { if (event.target === modal) closeModal(modal.id); }));
+    document.addEventListener("click", (event) => { const popover = $("#profilePopover"); if (popover && !popover.classList.contains("hidden") && !popover.contains(event.target) && !event.target.closest(".top-profile") && !event.target.closest(".sidebar-profile")) popover.classList.add("hidden"); });
 
-setInterval(simulateSensors, 5000);
+    $("#demoLoginBtn")?.addEventListener("click", () => { state.session = { mode: "demo", phone: "+91 98765 43210" }; loadWorkspace(); closeModal("loginModal"); renderAll(); toast("Demo workspace opened. All values remain locally labelled."); });
+    $("#phoneLoginForm")?.addEventListener("submit", async (event) => { event.preventDefault(); const input = $("#phoneNumber"); const phone = input?.value.trim(); const message = $("#loginMessage"); if (!/^\+\d{8,15}$/.test(phone || "")) { text("#loginMessage", "Enter a valid number with country code, such as +919876543210."); return; } if (!firebaseReady) { text("#loginMessage", "Phone authentication is not available in this browser. Use the demo workspace or connect Firebase Auth."); return; } try { if (!recaptchaVerifier) recaptchaVerifier = new firebase.auth.RecaptchaVerifier("recaptcha-container", { size: "invisible" }); confirmationResult = await firebase.auth().signInWithPhoneNumber(phone, recaptchaVerifier); $("#phoneLoginForm")?.classList.add("hidden"); $("#otpSection")?.classList.remove("hidden"); text("#loginMessage", "Verification code sent. Check your phone."); } catch (error) { console.error(error); if (message) message.textContent = "Could not send a code. Check Firebase Auth configuration or use the demo workspace."; } });
+    $("#verifyOtpBtn")?.addEventListener("click", async () => { const code = $("#otpCode")?.value.trim(); if (!confirmationResult || !/^\d{6}$/.test(code || "")) { text("#loginMessage", "Enter the 6-digit verification code."); return; } try { await confirmationResult.confirm(code); closeModal("loginModal"); } catch (error) { console.error(error); text("#loginMessage", "The verification code could not be confirmed."); } });
+
+    $("#profileForm")?.addEventListener("submit", async (event) => { event.preventDefault(); const values = { name: $("#profileName")?.value.trim(), phone: $("#profilePhone")?.value.trim(), farmerId: $("#profileFarmerId")?.value.trim(), farmName: $("#profileFarmName")?.value.trim(), fieldName: $("#profileFieldName")?.value.trim(), crop: $("#profileCrop")?.value, location: $("#profileLocation")?.value.trim(), district: $("#profileDistrict")?.value.trim(), state: $("#profileState")?.value.trim(), coordinates: $("#profileCoordinates")?.value.trim(), cultivation: $("#profileCultivation")?.value.trim(), godown: $("#profileGodown")?.value.trim() }; if (!values.name || !values.farmerId || !values.fieldName || !values.crop) { text("#profileFormMessage", "Name, Farmer ID, field name, and crop are required."); return; } await saveProfile(values); });
+    $("#pairingForm")?.addEventListener("submit", (event) => { event.preventDefault(); const field = $("#pairField")?.value; const deviceId = $("#deviceId")?.value.trim(); if (!field || !deviceId) { toast("Select a field and enter the ESP-12E device ID."); return; } state.workspace.pairing = { field, deviceId, registeredAt: nowIso(), connected: false }; addEvent("system", "Hardware pairing registered", `${deviceId} was registered locally for ${field}; live connection is not verified.`); saveWorkspace(); renderAll(); toast("Pairing saved locally. Hardware remains disconnected until a verified message arrives."); });
+    $("#observationImage")?.addEventListener("change", (event) => { const file = event.target.files?.[0]; const preview = $("#imagePreview"); if (!preview) return; if (!file) { preview.innerHTML = "<span>Image preview appears here</span>"; return; } const reader = new FileReader(); reader.onload = () => { preview.innerHTML = `<img src="${reader.result}" alt="Selected crop observation preview">`; }; reader.readAsDataURL(file); });
+    $("#observationForm")?.addEventListener("submit", (event) => { event.preventDefault(); const field = $("#observationField")?.value; const crop = $("#observationCrop")?.value; const notes = $("#observationNotes")?.value.trim(); const file = $("#observationImage")?.files?.[0]; if (!field || !crop || !notes) { const result = $("#observationResult"); if (result) { result.classList.remove("hidden"); result.textContent = "Select a field, crop, and add a short observation note."; } return; } const observation = { id: `obs-${Date.now()}`, field, crop, notes, imageName: file?.name || null, timestamp: nowIso(), status: "recorded" }; state.workspace.observations.unshift(observation); addEvent("observation", "Farmer observation recorded", `${crop} note added for ${field}${file ? ` with image ${file.name}` : " without an image"}.`); saveWorkspace(); const result = $("#observationResult"); if (result) { result.classList.remove("hidden"); result.textContent = "Observation recorded locally. Image analysis integration ready — diagnosis is not available in this demo."; } $("#observationNotes").value = ""; toast("Observation recorded in event history."); });
+    $$(".filter-btn").forEach((button) => button.addEventListener("click", () => { $$(".filter-btn").forEach((item) => item.classList.remove("active")); button.classList.add("active"); state.alertFilter = button.dataset.alertFilter; renderAlerts(); }));
+    $("#refreshAlertsBtn")?.addEventListener("click", () => { renderAlerts(); toast("Demo state refreshed. No live telemetry was received."); });
+    $("#alertsList")?.addEventListener("click", (event) => { const button = event.target.closest(".resolve-alert"); if (!button) return; const alert = state.workspace.alerts.find((item) => item.id === button.dataset.alertId); if (!alert) return; alert.status = "resolved"; alert.resolvedAt = nowIso(); addEvent("action", "Alert resolved", `${alert.title} marked resolved for ${alert.field || "field"}.`); saveWorkspace(); renderAll(); toast("Alert resolved and action added to event history."); });
+    $("#historyFilter")?.addEventListener("change", (event) => { state.historyFilter = event.target.value; renderHistory(); }); $("#clearDemoHistoryBtn")?.addEventListener("click", () => { state.workspace.events = []; saveWorkspace(); renderHistory(); toast("Event history cleared for this local workspace."); });
+    $("#addTraceEventBtn")?.addEventListener("click", () => { if (!state.workspace.profile) { toast("Set up a farmer profile before adding a traceability event."); return; } state.workspace.traceEvents = [...(state.workspace.traceEvents || []), { id: `trace-${Date.now()}`, title: "Farmer action recorded", detail: "Demo traceability event", status: "done" }]; addEvent("action", "Traceability event recorded", "A farmer action was added to the local record boundary."); saveWorkspace(); renderTraceability(); toast("Traceability event added to local history."); });
+    $("#saveSettingsBtn")?.addEventListener("click", () => { state.workspace.settings = { tempThreshold: Number($("#tempThreshold")?.value || 28), humidityThreshold: Number($("#humidityThreshold")?.value || 75), localNotifications: Boolean($("#localNotifications")?.checked) }; localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.workspace.settings)); saveWorkspace(); addEvent("system", "Workspace preferences saved", "Local demo thresholds were updated in this browser."); toast("Preferences saved locally."); });
+    $("#resetWorkspaceBtn")?.addEventListener("click", () => { if (!window.confirm("Reset this browser's BhoomiNOVA demo data?")) return; localStorage.removeItem(storageKey()); state.workspace = EMPTY_WORKSPACE(); renderAll(); toast("Local demo data reset. Profile details are no longer visible."); });
+    window.addEventListener("resize", drawAllCharts);
+  }
+
+  if (firebaseReady) {
+    firebase.auth().onAuthStateChanged(async (user) => { if (user) { state.session = { mode: "firebase", uid: user.uid, phone: user.phoneNumber || "" }; loadWorkspace(); const remote = await loadFirebaseProfile(user); if (remote) { state.workspace.profile = remote; saveWorkspace(); } renderAll(); if (!state.workspace.profile) openProfileForm(); } else if (state.session?.mode !== "demo") { state.session = null; state.workspace = EMPTY_WORKSPACE(); renderAll(); } });
+  }
+
+  bindEvents();
+  loadWorkspace();
+  renderAll();
+})();
