@@ -63,3 +63,13 @@ The crop rules are a transparent knowledge scaffold informed by the structure of
 [2]: https://agritech.tnau.ac.in/pdf/AGRICULTURE.pdf "TNAU Crop Production Guide"
 [3]: https://agritech.tnau.ac.in/agriculture/agri_agrometeorology_microclimate.html "TNAU Agrometeorology"
 [4]: https://www.usda.gov/about-usda/general-information/staff-offices/office-chief-economist/office-pest-management-policy-opmp/integrated-pest-management "USDA Integrated Pest Management"
+
+## Final offline-first architecture pass
+
+BhoomiNOVA is the digital interface of a distributed, offline-first field system. Strategic sensors and a camera feed an ESP32/ESP-12E field transmitter over a local wireless link such as ESP-NOW or LoRa. The farmer's home gateway stores buffered data locally, displays values, drives buzzer/LED outputs, and runs the local decision engine even when the Internet is unavailable. When connectivity returns, buffered events can synchronize to Firebase/cloud services. This static interface labels all telemetry and integrations honestly as Demo, Simulation, Integration Ready, Planned, Local Mode, Pending Sync, or Sync Complete.
+
+The intelligence model is layered: deterministic local rules handle immediate thresholds and hardware conditions; Edge AI is reserved for image-based crop assessment; Cloud AI is reserved for historical and multi-source analysis; and the farmer remains in control of higher-risk actions. The safety pattern is **AI recommends → safety rules validate → farmer approves where required → actuator performs a configured safe action**.
+
+The new operating modules cover the private farm map and digital twin, adaptive small/medium/large deployment bands, low-power wake/sense/process/transmit/sleep behavior, smart irrigation decisions, optional drone mission planning, offline network and sync state, public 10-digit discovery UID, Farmer/Consumer privacy separation, official-data-dependent procurement, local reports, and backup/restore concepts. Public UID is never a security permission; Firebase UID and owner-only Firestore rules remain the data boundary. PredicStor remains a future post-harvest integration and BhoomiNOVA remains focused on field intelligence.
+
+The visual architecture story is: **SENSE** ground sensors → **SEE** smartphone/camera → **SCOUT** optional drone → **ANALYSE** local rules + Edge AI + Cloud AI → **ACT** alerts, recommendations, safe actuator integration, and farmer decisions.
