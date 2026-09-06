@@ -226,8 +226,77 @@
     $("#consumerSwitchBtn")?.addEventListener("click", () => switchExperience());
   }
   function enterRoleWorkspace() { if (selectedRole() === "consumer") { renderConsumerWorkspace(); } else { $("#consumerShell")?.classList.add("hidden"); $("#appShell")?.classList.remove("hidden"); renderAll(); } }
-  function playIntro() { const intro=$("#brandIntro"); if (!intro) return Promise.resolve(); document.body.classList.add("entry-lock"); if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) { intro.classList.add("hidden"); return Promise.resolve(); } let resolveIntro; const finish=()=>{ intro.classList.add("leaving"); window.setTimeout(()=>{ intro.classList.add("hidden"); document.body.classList.remove("entry-lock"); resolveIntro?.(); },380); }; $("#skipIntroBtn")?.addEventListener("click",finish,{once:true}); window.setTimeout(finish,3000); return new Promise(resolve=>{resolveIntro=resolve;}); }
-  function openRolePortal() { const portal=$("#rolePortal"); if (!portal) return; portal.classList.remove("hidden"); document.body.classList.add("entry-lock"); }
+  let introRun = null;
+  let entryStage = "boot";
+  function revealRoleSelection() {
+    if (entryStage === "role-selection") return;
+    entryStage = "role-selection";
+    const intro = $("#brandIntro");
+    intro?.classList.add("hidden");
+    intro?.classList.remove("leaving");
+    document.body.classList.remove("entry-lock");
+    const portal = $("#rolePortal");
+    if (portal) portal.classList.remove("hidden");
+    document.body.classList.add("entry-lock");
+  }
+  function hideIntroImmediately() {
+    const intro = $("#brandIntro");
+    intro?.classList.add("hidden");
+    intro?.classList.remove("leaving");
+    document.body.classList.remove("entry-lock");
+  }
+  function playIntro() {
+    if (entryStage !== "boot") return Promise.resolve();
+    if (introRun) return introRun;
+    const intro = $("#brandIntro");
+    if (!intro) { revealRoleSelection(); return Promise.resolve(); }
+    entryStage = "intro";
+    document.body.classList.add("entry-lock");
+    const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) { hideIntroImmediately(); return Promise.resolve(); }
+    introRun = new Promise((resolve) => {
+      let settled = false;
+      let fallbackTimer = null;
+      let leaveTimer = null;
+      const settle = () => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(fallbackTimer);
+        window.clearTimeout(leaveTimer);
+        intro.classList.add("leaving");
+        leaveTimer = window.setTimeout(() => {
+          intro.classList.add("hidden");
+          intro.classList.remove("leaving");
+          document.body.classList.remove("entry-lock");
+          resolve();
+        }, 450);
+      };
+      const skip = $("#skipIntroBtn");
+      if (skip) skip.onclick = settle;
+      /* The timer is the source of truth; no animationend event is required. */
+      fallbackTimer = window.setTimeout(settle, 3000);
+      /* A defensive escape hatch covers timer throttling or unexpected CSS/runtime failures. */
+      window.setTimeout(() => {
+        if (!settled) { intro.classList.add("hidden"); intro.classList.remove("leaving"); document.body.classList.remove("entry-lock"); settled = true; resolve(); }
+      }, 5000);
+    }).catch((error) => {
+      console.warn("BhoomiNOVA intro recovered from an animation error.", error);
+      hideIntroImmediately();
+    });
+    return introRun;
+  }
+  function startEntryFlow() {
+    const seen = localStorage.getItem(INTRO_KEY) === "1";
+    if (seen) {
+      /* Markup starts visible by design; always close it when the intro is skipped on reload. */
+      hideIntroImmediately();
+      if (!state.role) revealRoleSelection();
+      else enterRoleWorkspace();
+      return;
+    }
+    localStorage.setItem(INTRO_KEY, "1");
+    playIntro().then(revealRoleSelection).catch(() => revealRoleSelection());
+  }
   function switchExperience() { state.session=null; state.role=null; localStorage.removeItem(ROLE_KEY); $("#consumerShell")?.classList.add("hidden"); $("#appShell")?.classList.add("hidden"); closeAllOverlays(); openRolePortal(); }
   function configureRoleAuth(role) { setRole(role); const title=$("#loginTitle"), body=$("#loginModal .modal-card > p"), demo=$("#demoLoginBtn"), google=$("#googleLoginBtn"), kicker=$("#loginModal .section-kicker"); if (title) title.textContent=role === "consumer" ? "Welcome, Consumer" : "Welcome, Farmer"; if (body) body.textContent=role === "consumer" ? "Discover trusted farm products and fresh harvests." : "Sign in to access your farm intelligence."; if (kicker) kicker.textContent=role === "consumer" ? "CONSUMER ACCESS" : "FARMER ACCESS"; if (demo) demo.textContent=role === "consumer" ? "Use consumer demo workspace" : "Use demo workspace"; if (google) google.setAttribute("aria-label", `${role} Google sign in`); openModal("loginModal"); }
   async function playRoleActivation(role) { if (role === "consumer") { const overlay=$("#activationOverlay"); if (!overlay) return; overlay.classList.remove("hidden"); document.body.classList.add("entry-lock"); text("#activationTitle","Consumer Experience Initializing"); text("#activationMessage","Connecting to the public farm network."); text("#activationState","PUBLIC MODE"); const steps=$$("[data-activation-step]"); const nodes=$$(".activation-node"); ["Public Farm Network","Fresh Harvest","Quality Information","Farmer-approved Data","Buyer Experience","CONSUMER EXPERIENCE READY"].forEach((label,i)=>window.setTimeout(()=>{if(steps[i]){steps[i].classList.add("ready");steps[i].textContent=`✓ ${label}`;} if(nodes[i]) nodes[i].classList.add("active"); text("#activationMessage",label);},260*i)); await new Promise(r=>window.setTimeout(r,1850)); overlay.classList.add("hidden"); document.body.classList.remove("entry-lock"); return; } await playActivation(); }
@@ -258,5 +327,5 @@
     $("#saveSettingsBtn")?.addEventListener("click", async () => { state.workspace.settings = { tempThreshold: Number($("#tempThreshold")?.value || 32), humidityThreshold: Number($("#humidityThreshold")?.value || 75), localNotifications: true }; state.workspace.notificationPreferences = { primaryFarmerInApp: Boolean($("#notifyFarmerInApp")?.checked), familyWhatsApp: Boolean($("#notifyFamilyWhatsApp")?.checked), sms: false, voiceIvr: false }; localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.workspace.settings)); saveWorkspace(); addEvent("system", "Notification preferences saved", "In-app and integration-ready channel preferences were updated. No message was delivered."); await syncRemoteWorkspace(); renderAll(); toast("Preferences saved. No WhatsApp, SMS, or voice message was sent."); }); $("#resetWorkspaceBtn")?.addEventListener("click", () => { if (!window.confirm("Reset this browser's BhoomiNOVA field data?")) return; localStorage.removeItem(storageKey()); state.workspace = EMPTY_WORKSPACE(); renderAll(); toast("Local field workspace reset."); }); window.addEventListener("resize", drawAllCharts);
   }
   if (firebaseReady) firebase.auth().onAuthStateChanged(async (user) => { if (user) { state.session = { mode: "firebase", uid: user.uid, phone: user.phoneNumber || "", email: user.email || "", displayName: user.displayName || "", providerLabel: firebaseProviderLabel(user) }; loadWorkspace(); const remote = await loadFirebaseWorkspace(user); if (remote) { if (remote.profile) state.workspace.profile = remote.profile; if (remote.familyAssist) state.workspace.familyAssist = { ...state.workspace.familyAssist, ...remote.familyAssist }; if (remote.notificationPreferences) state.workspace.notificationPreferences = { ...state.workspace.notificationPreferences, ...remote.notificationPreferences }; saveWorkspace(); } if (state.role === "consumer") { await playRoleActivation("consumer"); renderConsumerWorkspace(); } else { await playRoleActivation("farmer"); $("#consumerShell")?.classList.add("hidden"); $("#appShell")?.classList.remove("hidden"); renderAll(); if (!state.workspace.profile) openProfileForm(); } } else if (state.session?.mode !== "demo") { state.session = null; state.workspace = EMPTY_WORKSPACE(); renderAll(); } });
-  $("#sidebarProfileBtn")?.insertAdjacentHTML("afterend", "<button id=\"farmerSwitchExperienceBtn\" class=\"text-btn\" type=\"button\" style=\"width:100%;padding:7px 0;font-size:10px;\">Switch experience</button>"); $("#farmerSwitchExperienceBtn")?.addEventListener("click", switchExperience); bindEvents(); if (state.role === "consumer") { $("#appShell")?.classList.add("hidden"); renderConsumerWorkspace(); } else { $("#appShell")?.classList.add("hidden"); } if (!localStorage.getItem(INTRO_KEY)) { localStorage.setItem(INTRO_KEY,"1"); playIntro().then(openRolePortal); } else if (!state.role) { openRolePortal(); } else { enterRoleWorkspace(); }
+  $("#sidebarProfileBtn")?.insertAdjacentHTML("afterend", "<button id=\"farmerSwitchExperienceBtn\" class=\"text-btn\" type=\"button\" style=\"width:100%;padding:7px 0;font-size:10px;\">Switch experience</button>"); $("#farmerSwitchExperienceBtn")?.addEventListener("click", switchExperience); bindEvents(); if (state.role === "consumer") { $("#appShell")?.classList.add("hidden"); renderConsumerWorkspace(); } else { $("#appShell")?.classList.add("hidden"); } startEntryFlow();
 })();
