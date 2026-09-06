@@ -114,3 +114,12 @@ The final local pass covered the following items:
 ## Known limitations
 
 Firebase phone verification depends on the Firebase project configuration, authorized domains, billing/quotas, and a real phone verification flow. The demo workspace is the reliable presentation path when Firebase Auth is not available. Real telemetry, calibration, storage rules, crop-specific research validation, gateway communications, image analysis, weather services, market integration, and government services must be implemented and verified separately before being presented as live functionality.
+
+
+## BhoomiNOVA field-first scope
+
+The current prototype is a field-first AI smart farming assistant for SIH26180. It preserves the original offline workspace, farmer profile, alert, history, and hardware-registration flows, while replacing storage-management framing with field setup, crop-aware risk assessment, Edge AI observation preparation, recovery, and harvest-readiness records.
+
+The local optimization engine is intentionally transparent and deterministic. It combines the selected crop, crop reference bands, location and stage fields, illustrative sensor inputs, and farmer observations. It does **not** claim live internet research, continuous hardware telemetry, disease diagnosis, yield prediction, or image-analysis accuracy. The ESP-12E is treated only as a telemetry node; camera analysis is reserved for a smartphone, camera-capable edge device, or future Qualcomm/edge gateway.
+
+The crop rules are an extendable knowledge scaffold informed by the structure of agricultural guidance from [FAO crop water requirements](https://www.fao.org/4/x0490e/x0490e00.htm), [TNAU crop production guides](https://agritech.tnau.ac.in/pdf/AGRICULTURE.pdf), [TNAU agrometeorology guidance](https://agritech.tnau.ac.in/agriculture/agri_agrometeorology_microclimate.html), and [USDA integrated pest management principles](https://www.usda.gov/about-usda/general-information/staff-offices/office-chief-economist/office-pest-management-policy-opmp/integrated-pest-management). Exact action thresholds should be validated with local ICAR, state agricultural university, and extension advice before production use.
