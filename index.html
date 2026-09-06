@@ -13,6 +13,15 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div id="brandIntro" class="entry-overlay" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+    <div class="intro-contours" aria-hidden="true"></div><div class="intro-arc" aria-hidden="true"></div>
+    <div class="intro-center"><div class="intro-logo-symbol"><span class="brand-mark"><svg viewBox="0 0 48 48"><path d="M24 6c-8 7-13 14-13 22 0 8 5 14 13 14s13-6 13-14C37 20 32 13 24 6Z" fill="none" stroke="currentColor" stroke-width="3"/><path d="M24 16v22M24 25c-4-2-7-4-9-7M24 30c4-2 7-4 9-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span></div><h1 id="introTitle"><span>Bhoomi</span><b>NOVA</b></h1><p>Intelligence for Every Field</p><div class="intro-nodes" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div>
+    <button id="skipIntroBtn" class="intro-skip" type="button">Skip intro</button>
+  </div>
+  <div id="rolePortal" class="entry-overlay role-portal hidden" role="dialog" aria-modal="true" aria-labelledby="roleTitle">
+    <div class="role-portal-inner"><span class="section-kicker">BHOOMINOVA FIELD INTELLIGENCE</span><h2 id="roleTitle">Who are you?</h2><p>Choose your BhoomiNOVA experience</p><div class="role-cards"><button class="role-card farmer-role" data-role="farmer" type="button"><span class="role-icon" aria-hidden="true">⌁</span><strong>I am a Farmer</strong><small>Monitor my farm, crops, risks, water and harvest.</small><em>Enter private farm intelligence →</em></button><button class="role-card consumer-role" data-role="consumer" type="button"><span class="role-icon" aria-hidden="true">◌</span><strong>I am a Consumer</strong><small>Discover farm products, farmers and fresh harvests.</small><em>Explore public farm connections →</em></button></div><small class="role-boundary">Your role controls the workspace, navigation and data boundary.</small></div>
+  </div>
+  <div id="consumerShell" class="consumer-shell hidden" aria-label="Consumer workspace"></div>
   <div id="activationOverlay" class="activation-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="activationTitle">
     <div class="activation-shell">
       <div class="activation-brand"><span class="activation-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 6c-8 7-13 14-13 22 0 8 5 14 13 14s13-6 13-14C37 20 32 13 24 6Z" fill="none" stroke="currentColor" stroke-width="3"/><path d="M24 16v22M24 25c-4-2-7-4-9-7M24 30c4-2 7-4 9-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span><span><strong>Bhoomi<span>NOVA</span></strong><small>Field intelligence</small></span></div>
