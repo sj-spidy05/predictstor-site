@@ -445,3 +445,21 @@ input::placeholder, textarea::placeholder { color: #a7b5ae; }
 @media (max-width: 1100px) { .risk-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 720px) { .risk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .risk-card { min-height: 0; } }
 @media (max-width: 480px) { .risk-grid { grid-template-columns: 1fr; } }
+
+
+/* Final audit pass: truthful statuses and Family Assist controls */
+.stat-icon.violet { background: #eeeafd; color: #6d5bb5; }
+.risk-critical { border-top: 3px solid #8d2235; background: #fff7f8; }
+.risk-critical .risk-icon { background: #f9dce2; color: #8d2235; }
+.risk-critical .risk-label { color: #8d2235; }
+.family-panel .panel-subtext { max-width: 58ch; }
+.consent-row { margin: 14px 0; padding: 11px 12px; border: 1px solid #e4ede7; border-radius: 12px; background: #fbfdfb; }
+.notification-list { display: grid; gap: 8px; }
+.notification-list .setting-row { border-bottom: 1px solid #edf2ee; }
+.future-access-panel { margin-top: 20px; }
+.alert-record-marker.danger { background: #c65c5c; }
+.alert-record-marker.warning { background: #c69446; }
+@media (max-width: 720px) { .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .family-panel .form-grid { grid-template-columns: 1fr; } }
+@media (max-width: 420px) { .stats-grid { grid-template-columns: 1fr; } .stat-card { min-height: 92px; } }
+
+.pill-blue { background: #e3eff8; color: #29688d; }
