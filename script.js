@@ -84,6 +84,11 @@
       firebaseDb = firebase.firestore ? firebase.firestore() : null;
     }
   } catch (error) { console.warn("Firebase unavailable; local mode remains available.", error); }
+  let authStatus = firebaseReady ? "AUTH_INITIALIZING" : "AUTH_SIGNED_OUT";
+  let authStateResolved = !firebaseReady;
+  let redirectResultResolved = !firebaseReady;
+  let entryFlowStarted = false;
+  document.body.classList.add("auth-initializing");
 
   const DEFAULT_EVENTS = [
     { id: "event-system", type: "system", title: "Field intelligence workspace opened", detail: "Local rule engine initialized. No live telemetry or vision diagnosis is connected.", timestamp: nowIso() },
@@ -98,7 +103,7 @@
   async function syncRemoteWorkspace() {
     if (state.session?.mode !== "firebase" || !firebaseDb || !firebase.auth().currentUser) return false;
     const uid = firebase.auth().currentUser.uid;
-    const consumerPayload = state.role === "consumer" ? loadConsumerState() : null; const payload = { ownerUid: uid, profile: state.workspace.profile || null, consumerProfile: consumerPayload, familyAssist: state.workspace.familyAssist || null, notificationPreferences: state.workspace.notificationPreferences || null, sync: { status: "SYNC COMPLETE", lastSync: nowIso(), pending: 0 }, updatedAt: nowIso() };
+    const consumerPayload = state.role === "consumer" ? loadConsumerState() : null; const payload = { ownerUid: uid, role: state.role || null, profile: state.workspace.profile || null, consumerProfile: consumerPayload, familyAssist: state.workspace.familyAssist || null, notificationPreferences: state.workspace.notificationPreferences || null, sync: { status: "SYNC COMPLETE", lastSync: nowIso(), pending: 0 }, updatedAt: nowIso() };
     try { await Promise.all([firebaseDb.collection("users").doc(uid).set(payload, { merge: true }), firebaseDb.collection("farmers").doc(uid).set({ ...payload, ...(state.workspace.profile || {}) }, { merge: true })]); return true; } catch (error) { console.warn("Firebase workspace sync failed", error); return false; }
   }
   function firebaseProviderLabel(user) { const provider = user?.providerData?.[0]?.providerId || ""; return provider === "google.com" ? "Google account" : provider === "phone" ? "Existing Firebase account" : "Firebase account"; }
@@ -187,9 +192,9 @@
   function drawChart(canvasId, dataSets, colors) { const canvas = $(`#${canvasId}`); if (!canvas || !canvas.offsetWidth) return; const width = canvas.offsetWidth; const height = Number(canvas.getAttribute("height")) || 220; const ratio = window.devicePixelRatio || 1; canvas.width = width * ratio; canvas.height = height * ratio; canvas.style.height = `${height}px`; const ctx = canvas.getContext("2d"); ctx.setTransform(ratio, 0, 0, ratio, 0, 0); ctx.clearRect(0, 0, width, height); const pad = { top: 15, right: 12, bottom: 22, left: 22 }; ctx.strokeStyle = "#e8efea"; ctx.lineWidth = 1; for (let i = 0; i < 4; i += 1) { const y = pad.top + i * ((height - pad.top - pad.bottom) / 3); ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(width - pad.right, y); ctx.stroke(); } dataSets.forEach((values, setIndex) => { ctx.beginPath(); values.forEach((value, index) => { const x = pad.left + index * ((width - pad.left - pad.right) / Math.max(values.length - 1, 1)); const y = pad.top + (height - pad.top - pad.bottom) * (1 - clamp(value, 0, 100) / 100); if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }); ctx.strokeStyle = colors[setIndex]; ctx.lineWidth = 2; ctx.stroke(); }); ctx.fillStyle = "#91a097"; ctx.font = "10px DM Sans"; ["-12h", "-8h", "-4h", "Now"].forEach((label, index, labels) => { const x = pad.left + index * ((width - pad.left - pad.right) / (labels.length - 1)); ctx.fillText(label, x - 10, height - 5); }); }
   function drawAllCharts() { const t = state.workspace.telemetry || DEMO_TELEMETRY; drawChart("dashboardChart", [[t.humidity - 5, t.humidity - 2, t.humidity, t.humidity - 1, t.humidity, t.humidity + 1, t.humidity], [t.temperature * 2 - 8, t.temperature * 2 - 6, t.temperature * 2 - 4, t.temperature * 2 - 3, t.temperature * 2 - 2, t.temperature * 2, t.temperature * 2]], ["#168255", "#5d96bc"]); drawChart("sensorChart", [[t.soilMoisture - 6, t.soilMoisture - 2, t.soilMoisture, t.soilMoisture + 2, t.soilMoisture + 1, t.soilMoisture], [t.temperature * 2 - 8, t.temperature * 2 - 5, t.temperature * 2 - 2, t.temperature * 2 - 3, t.temperature * 2, t.temperature * 2]], ["#168255", "#c69446"]); }
   function navigate(page) { const target = $(`#${page}`); if (!target) return; $$(".page").forEach((item) => item.classList.remove("active-page")); target.classList.add("active-page"); $$(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.page === page)); text("#pageTitle", PAGE_TITLES[page] || "Field overview"); localStorage.setItem(ROUTE_KEY, page); $("#appShell")?.classList.remove("nav-open"); window.scrollTo({ top: 0, behavior: "smooth" }); window.setTimeout(drawAllCharts, 30); }
-  async function saveProfile(profile) { const nextProfile = ensurePublicUid({ ...(state.workspace.profile || {}), ...profile, savedAt: nowIso(), ownerUid: state.session?.uid || "demo" }); state.workspace.profile = nextProfile; state.workspace.alerts = []; saveWorkspace(); addEvent("system", "Farmer field profile saved", `${nextProfile.name} updated the farmer, farm, field, crop, and location profile.`); const synced = await syncRemoteWorkspace(); if (state.session?.mode === "firebase" && !synced) { text("#profileFormMessage", "Profile could not be confirmed in Firebase. Check your connection and retry; your local draft is retained."); return false; } toast(synced ? "Profile saved to the browser and Firebase." : "Field profile saved locally. Crop-specific guidance is active."); closeModal("profileModal"); renderAll(); return true; }
-  async function loadFirebaseWorkspace(user) { if (!firebaseDb) return null; try { const [farmerDoc, userDoc] = await Promise.all([firebaseDb.collection("farmers").doc(user.uid).get(), firebaseDb.collection("users").doc(user.uid).get()]); const farmerData = farmerDoc.exists ? farmerDoc.data() : {}; const userData = userDoc.exists ? userDoc.data() : {}; const profile = farmerData.profile || userData.profile || (farmerDoc.exists ? { ...farmerData } : null); return { profile: profile ? { ...profile, uid: user.uid, ownerUid: user.uid, phone: profile.phone || "", email: user.email || profile.email || "" } : null, consumerProfile: userData.consumerProfile || farmerData.consumerProfile || null, familyAssist: farmerData.familyAssist || userData.familyAssist || null, notificationPreferences: farmerData.notificationPreferences || userData.notificationPreferences || null }; } catch (error) { console.warn("Firebase workspace load failed", error); return null; } }
-  async function signOut() { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(ROUTE_KEY); try { if (state.session?.mode === "firebase" && firebaseReady) await firebase.auth().signOut(); } catch (error) { console.warn("Firebase sign out failed", error); } state.session = null; state.workspace = EMPTY_WORKSPACE(); closeAllOverlays(); navigate("dashboard"); renderAll(); toast("You have been logged out. Private farmer information is cleared from view."); }
+  async function saveProfile(profile) { const nextProfile = ensurePublicUid({ ...(state.workspace.profile || {}), ...profile, savedAt: nowIso(), ownerUid: state.session?.uid || "demo" }); state.workspace.profile = nextProfile; state.workspace.alerts = []; saveWorkspace(); addEvent("system", "Farmer field profile saved", `${nextProfile.name} updated the farmer, farm, field, crop, and location profile.`); const synced = await syncRemoteWorkspace(); if (state.session?.mode === "firebase" && !synced) { text("#profileFormMessage", "Profile could not be confirmed in Firebase. Check your connection and retry; your local draft is retained."); return false; } toast(synced ? "Profile saved to the browser and Firebase." : "Field profile saved locally. Crop-specific guidance is active."); localStorage.removeItem(PENDING_ROLE_KEY); closeModal("profileModal"); renderAll(); return true; }
+  async function loadFirebaseWorkspace(user) { if (!firebaseDb) return null; try { const [farmerDoc, userDoc] = await Promise.all([firebaseDb.collection("farmers").doc(user.uid).get(), firebaseDb.collection("users").doc(user.uid).get()]); const farmerData = farmerDoc.exists ? farmerDoc.data() : {}; const userData = userDoc.exists ? userDoc.data() : {}; const profile = farmerData.profile || userData.profile || (farmerDoc.exists ? { ...farmerData } : null); return { role: farmerData.role || userData.role || null, profile: profile ? { ...profile, uid: user.uid, ownerUid: user.uid, phone: profile.phone || "", email: user.email || profile.email || "" } : null, consumerProfile: userData.consumerProfile || farmerData.consumerProfile || null, familyAssist: farmerData.familyAssist || userData.familyAssist || null, notificationPreferences: farmerData.notificationPreferences || userData.notificationPreferences || null }; } catch (error) { console.warn("Firebase workspace load failed", error); return null; } }
+  async function signOut() { entryFlowStarted=false; authStatus="AUTH_SIGNED_OUT"; entryStage="boot"; introRun=null; localStorage.removeItem(SESSION_KEY); localStorage.removeItem(ROUTE_KEY); try { if (state.session?.mode === "firebase" && firebaseReady) await firebase.auth().signOut(); } catch (error) { console.warn("Firebase sign out failed", error); } state.session = null; state.workspace = EMPTY_WORKSPACE(); closeAllOverlays(); navigate("dashboard"); renderAll(); toast("You have been logged out. Private farmer information is cleared from view."); }
   let activationTimer = null;
   function playActivation() {
     const overlay = $("#activationOverlay");
@@ -208,9 +213,10 @@
   }
 
   const ROLE_KEY = "bhoominova_role_v1";
+  const PENDING_ROLE_KEY = "bhoominova_pending_role_v1";
   const INTRO_KEY = "bhoominova_intro_seen_v1";
-  function selectedRole() { return state.role || localStorage.getItem(ROLE_KEY) || null; }
-  function setRole(role) { state.role = role; localStorage.setItem(ROLE_KEY, role); }
+  function selectedRole() { return state.role || localStorage.getItem(PENDING_ROLE_KEY) || localStorage.getItem(ROLE_KEY) || null; }
+  function setRole(role) { state.role = role; localStorage.setItem(ROLE_KEY, role); localStorage.setItem(PENDING_ROLE_KEY, role); }
   function consumerKey() { return "bhoominova_consumer_v1"; }
   function loadConsumerState() { return safeParse(localStorage.getItem(consumerKey()), { profile: { name: "", email: "" }, buyerUid: null, favorites: [], follows: [], requests: [], history: [], notifications: [] }); }
   function saveConsumerState(data) { localStorage.setItem(consumerKey(), JSON.stringify(data)); }
@@ -293,14 +299,15 @@
     return introRun;
   }
   function startEntryFlow() {
-    entryStage = "boot"; introRun = null;
+    if (entryFlowStarted || authStatus !== "AUTH_SIGNED_OUT" || !authStateResolved || !redirectResultResolved) return;
+    entryFlowStarted = true; entryStage = "boot"; introRun = null;
+    document.body.classList.remove("auth-initializing");
     $("#rolePortal")?.classList.add("hidden"); $("#consumerShell")?.classList.add("hidden"); $("#appShell")?.classList.add("hidden");
     document.body.classList.remove("entry-lock");
-    const savedSession = safeParse(localStorage.getItem(SESSION_KEY), null);
-    if (savedSession?.mode === "demo") { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(ROLE_KEY); }
+    localStorage.removeItem(SESSION_KEY);
     playIntro().then(revealRoleSelection).catch(() => revealRoleSelection());
   }
-  function switchExperience() { state.session=null; state.role=null; localStorage.removeItem(ROLE_KEY); $("#consumerShell")?.classList.add("hidden"); $("#appShell")?.classList.add("hidden"); closeAllOverlays(); entryStage="boot"; introRun=null; const intro=$("#brandIntro"); intro?.classList.add("hidden"); $("#rolePortal")?.classList.remove("hidden"); document.body.classList.add("entry-lock"); }
+  function switchExperience() { state.session=null; state.role=null; entryFlowStarted=false; authStatus="AUTH_SIGNED_OUT"; localStorage.removeItem(ROLE_KEY); localStorage.removeItem(PENDING_ROLE_KEY); $("#consumerShell")?.classList.add("hidden"); $("#appShell")?.classList.add("hidden"); closeAllOverlays(); entryStage="boot"; introRun=null; const intro=$("#brandIntro"); intro?.classList.add("hidden"); $("#rolePortal")?.classList.remove("hidden"); document.body.classList.add("entry-lock"); }
   function configureRoleAuth(role) { setRole(role); const title=$("#loginTitle"), body=$("#loginModal .modal-card > p"), google=$("#googleLoginBtn"), kicker=$("#loginModal .section-kicker"); if (title) title.textContent=role === "consumer" ? "Welcome, Consumer" : "Welcome, Farmer"; if (body) body.textContent=role === "consumer" ? "Discover trusted farm products and fresh harvests." : "Sign in to access your farm intelligence."; if (kicker) kicker.textContent=role === "consumer" ? "CONSUMER ACCESS" : "FARMER ACCESS"; if (google) google.setAttribute("aria-label", `${role} Google sign in`); openModal("loginModal"); }
   async function playRoleActivation(role) { if (role === "consumer") { const overlay=$("#activationOverlay"); if (!overlay) return; overlay.classList.remove("hidden"); document.body.classList.add("entry-lock"); text("#activationTitle","Consumer Experience Initializing"); text("#activationMessage","Connecting to the public farm network."); text("#activationState","PUBLIC MODE"); const steps=$$("[data-activation-step]"); const nodes=$$(".activation-node"); ["Public Farm Network","Fresh Harvest","Quality Information","Farmer-approved Data","Buyer Experience","CONSUMER EXPERIENCE READY"].forEach((label,i)=>window.setTimeout(()=>{if(steps[i]){steps[i].classList.add("ready");steps[i].textContent=`✓ ${label}`;} if(nodes[i]) nodes[i].classList.add("active"); text("#activationMessage",label);},260*i)); await new Promise(r=>window.setTimeout(r,1850)); overlay.classList.add("hidden"); document.body.classList.remove("entry-lock"); return; } await playActivation(); }
 
@@ -341,6 +348,54 @@
     $("#historyFilter")?.addEventListener("change", (event) => { state.historyFilter = event.target.value; renderHistory(); }); $("#clearDemoHistoryBtn")?.addEventListener("click", () => { state.workspace.events = []; saveWorkspace(); renderHistory(); toast("Event history cleared for this local workspace."); }); $("#addTraceEventBtn")?.addEventListener("click", () => { if (!state.workspace.profile) { toast("Set up a farmer profile before adding a field action."); return; } state.workspace.traceEvents = [...(state.workspace.traceEvents || []), { id: `trace-${Date.now()}`, title: "Farmer action recorded", detail: "Field observation or recovery action", status: "done" }]; addEvent("action", "Farmer action recorded", "A recovery-loop action was added to the local field record."); saveWorkspace(); renderTraceability(); renderHistory(); toast("Farmer action added to the recovery record."); });
     $("#saveSettingsBtn")?.addEventListener("click", async () => { state.workspace.settings = { tempThreshold: Number($("#tempThreshold")?.value || 32), humidityThreshold: Number($("#humidityThreshold")?.value || 75), localNotifications: true }; state.workspace.notificationPreferences = { primaryFarmerInApp: Boolean($("#notifyFarmerInApp")?.checked), familyWhatsApp: Boolean($("#notifyFamilyWhatsApp")?.checked), sms: false, voiceIvr: false }; localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.workspace.settings)); saveWorkspace(); addEvent("system", "Notification preferences saved", "In-app and integration-ready channel preferences were updated. No message was delivered."); await syncRemoteWorkspace(); renderAll(); toast("Preferences saved. No WhatsApp, SMS, or voice message was sent."); }); $("#resetWorkspaceBtn")?.addEventListener("click", () => { if (!window.confirm("Reset this browser's BhoomiNOVA field data?")) return; localStorage.removeItem(storageKey()); state.workspace = EMPTY_WORKSPACE(); renderAll(); toast("Local field workspace reset."); }); window.addEventListener("resize", drawAllCharts);
   }
-  if (firebaseReady) { firebase.auth().onAuthStateChanged(async (user) => { if (user) { state.session = { mode: "firebase", uid: user.uid, phone: user.phoneNumber || "", email: user.email || "", displayName: user.displayName || "", providerLabel: firebaseProviderLabel(user) }; localStorage.setItem(SESSION_KEY, JSON.stringify({ mode: "firebase", role: state.role, uid: user.uid })); loadWorkspace(); const remote = await loadFirebaseWorkspace(user); if (remote) { if (remote.profile) state.workspace.profile = remote.profile; if (remote.consumerProfile) { const consumer=loadConsumerState(); consumer.profile={ ...consumer.profile, ...remote.consumerProfile }; saveConsumerState(consumer); } if (remote.familyAssist) state.workspace.familyAssist = { ...state.workspace.familyAssist, ...remote.familyAssist }; if (remote.notificationPreferences) state.workspace.notificationPreferences = { ...state.workspace.notificationPreferences, ...remote.notificationPreferences }; saveWorkspace(); } closeModal("loginModal"); if (state.role === "consumer") { await playRoleActivation("consumer"); renderConsumerWorkspace(); } else { await playRoleActivation("farmer"); $("#consumerShell")?.classList.add("hidden"); $("#appShell")?.classList.remove("hidden"); renderAll(); if (!state.workspace.profile) openProfileForm(); else navigate(localStorage.getItem(ROUTE_KEY) || "dashboard"); } } else if (state.session?.mode !== "demo") { state.session = null; state.workspace = EMPTY_WORKSPACE(); localStorage.removeItem(SESSION_KEY); renderAll(); } }); firebase.auth().getRedirectResult().catch((error) => { const code=error?.code || ""; if (code) { const messages={"auth/unauthorized-domain":"This website domain is not authorized in Firebase Authentication.","auth/api-key-not-valid":"The Firebase Web App API key is invalid or restricted for this domain.","auth/network-request-failed":"Network connection failed while completing Google sign-in."}; text("#loginMessage", messages[code] || "Google Sign-In could not be completed. Please retry."); console.warn("Google redirect sign-in failed", code); } }); }
-  $("#sidebarProfileBtn")?.insertAdjacentHTML("afterend", "<button id=\"farmerSwitchExperienceBtn\" class=\"text-btn\" type=\"button\" style=\"width:100%;padding:7px 0;font-size:10px;\">Switch experience</button>"); $("#farmerSwitchExperienceBtn")?.addEventListener("click", switchExperience); bindEvents(); if (state.role === "consumer") { $("#appShell")?.classList.add("hidden"); renderConsumerWorkspace(); } else { $("#appShell")?.classList.add("hidden"); } startEntryFlow();
+  const maybeStartPublicEntry = () => { if (authStatus === "AUTH_SIGNED_OUT" && authStateResolved && redirectResultResolved) startEntryFlow(); };
+  if (firebaseReady) {
+    firebase.auth().onAuthStateChanged(async (user) => {
+      authStateResolved = true;
+      if (user) {
+        authStatus = "AUTHENTICATED";
+        const pendingRole = localStorage.getItem(PENDING_ROLE_KEY) || localStorage.getItem(ROLE_KEY) || state.role;
+        state.role = pendingRole || "farmer";
+        setRole(state.role);
+        entryFlowStarted = true;
+        entryStage = "authenticated";
+        document.body.classList.remove("auth-initializing");
+        introRun = null;
+        hideIntroImmediately();
+        $("#rolePortal")?.classList.add("hidden");
+        $("#consumerShell")?.classList.add("hidden");
+        state.session = { mode: "firebase", uid: user.uid, phone: user.phoneNumber || "", email: user.email || "", displayName: user.displayName || "", providerLabel: firebaseProviderLabel(user) };
+        localStorage.setItem(SESSION_KEY, JSON.stringify({ mode: "firebase", role: state.role, uid: user.uid }));
+        loadWorkspace();
+        const remote = await loadFirebaseWorkspace(user);
+        if (remote) {
+          if (remote.role) { state.role = remote.role; localStorage.setItem(ROLE_KEY, remote.role); }
+          if (remote.profile) state.workspace.profile = remote.profile;
+          if (remote.consumerProfile) { const consumer=loadConsumerState(); consumer.profile={ ...consumer.profile, ...remote.consumerProfile }; saveConsumerState(consumer); }
+          if (remote.familyAssist) state.workspace.familyAssist = { ...state.workspace.familyAssist, ...remote.familyAssist };
+          if (remote.notificationPreferences) state.workspace.notificationPreferences = { ...state.workspace.notificationPreferences, ...remote.notificationPreferences };
+          saveWorkspace();
+        }
+        closeModal("loginModal");
+        if (state.role === "consumer") {
+          await playRoleActivation("consumer");
+          renderConsumerWorkspace();
+          localStorage.removeItem(PENDING_ROLE_KEY);
+        } else {
+          await playRoleActivation("farmer");
+          $("#consumerShell")?.classList.add("hidden");
+          $("#appShell")?.classList.remove("hidden");
+          renderAll();
+          if (!state.workspace.profile) openProfileForm();
+          else { navigate(localStorage.getItem(ROUTE_KEY) || "dashboard"); localStorage.removeItem(PENDING_ROLE_KEY); }
+        }
+      } else {
+        authStatus = "AUTH_SIGNED_OUT";
+        state.session = null; state.workspace = EMPTY_WORKSPACE(); localStorage.removeItem(SESSION_KEY); renderAll();
+        maybeStartPublicEntry();
+      }
+    });
+    firebase.auth().getRedirectResult().then(() => { redirectResultResolved = true; maybeStartPublicEntry(); }).catch((error) => { redirectResultResolved = true; const code=error?.code || ""; if (code) { const messages={"auth/unauthorized-domain":"This website domain is not authorized in Firebase Authentication.","auth/api-key-not-valid":"The Firebase Web App API key is invalid or restricted for this domain.","auth/network-request-failed":"Network connection failed while completing Google sign-in."}; text("#loginMessage", messages[code] || "Google Sign-In could not be completed. Please retry."); console.warn("Google redirect sign-in failed", code); } maybeStartPublicEntry(); });
+  }
+  $("#sidebarProfileBtn")?.insertAdjacentHTML("afterend", "<button id=\"farmerSwitchExperienceBtn\" class=\"text-btn\" type=\"button\" style=\"width:100%;padding:7px 0;font-size:10px;\">Switch experience</button>"); $("#farmerSwitchExperienceBtn")?.addEventListener("click", switchExperience); bindEvents(); $("#consumerShell")?.classList.add("hidden"); $("#appShell")?.classList.add("hidden"); startEntryFlow();
 })();

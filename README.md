@@ -105,3 +105,8 @@ The public entry flow now uses Firebase Authentication as its source of truth. T
 Farmer profile save is owner-scoped to the authenticated Firebase UID and requires confirmed Firebase sync for authenticated sessions before closing the profile form; local drafts remain available when the network is unavailable. Consumer profile edits use the same UID-scoped sync payload. Mobile fields no longer fall back to the account email and display `Not added` when no mobile number exists. Public UID, route, local workspace, Consumer profile, and offline state remain persisted separately from authentication state.
 
 The GitHub Pages production build contains one Firebase client configuration and one initialization path. Firebase Console Google provider enablement, authorized domains, Firestore rules, and external provider availability remain deployment-level dependencies; this repository does not expose Admin credentials or alter Security Rules.
+
+
+## Google authentication redirect-loop protection
+
+The entry controller now waits for Firebase Auth initialization and redirect-result processing before showing the public intro. Authenticated users bypass the intro and role selection on refresh, while signed-out users receive the normal cinematic entry flow. A temporary pending-role key preserves Farmer or Consumer selection across popup and redirect authentication, and it is cleared only after the authenticated workspace or profile route is initialized. Logout and Switch User explicitly reset the entry controller so the intro can be shown intentionally again.
