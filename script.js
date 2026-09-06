@@ -2,7 +2,7 @@
   "use strict";
 
   const firebaseConfig = {
-    apiKey: "AIzaSyBxVrLZ00yG5cEjxL2gyDXKaudDyPNvZM",
+    apiKey: "AIzaSyBxVrLZ0YYaGYcEjxL2gyDXKaudDyPNvZM",
     authDomain: "predictstor.firebaseapp.com",
     projectId: "predictstor",
     storageBucket: "predictstor.firebasestorage.app",
