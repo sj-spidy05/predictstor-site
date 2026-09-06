@@ -13,6 +13,15 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div id="activationOverlay" class="activation-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="activationTitle">
+    <div class="activation-shell">
+      <div class="activation-brand"><span class="activation-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 6c-8 7-13 14-13 22 0 8 5 14 13 14s13-6 13-14C37 20 32 13 24 6Z" fill="none" stroke="currentColor" stroke-width="3"/><path d="M24 16v22M24 25c-4-2-7-4-9-7M24 30c4-2 7-4 9-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span><span><strong>Bhoomi<span>NOVA</span></strong><small>Field intelligence</small></span></div>
+      <div class="activation-copy"><span class="section-kicker">OFFLINE-FIRST FIELD ARCHITECTURE</span><h2 id="activationTitle">Field Intelligence Initializing</h2><p id="activationMessage">Preparing your local field workspace.</p></div>
+      <div class="activation-architecture" aria-label="Sense, see, scout, analyse, act"><span class="activation-node active"><b>SENSE</b><small>Ground sensors</small></span><i>→</i><span class="activation-node"><b>SEE</b><small>Phone / camera</small></span><i>→</i><span class="activation-node"><b>SCOUT</b><small>Optional drone</small></span><i>→</i><span class="activation-node"><b>ANALYSE</b><small>Local + Edge + Cloud</small></span><i>→</i><span class="activation-node"><b>ACT</b><small>Safe farmer action</small></span></div>
+      <div class="activation-status-grid"><span data-activation-step="0">✓ Local Gateway</span><span data-activation-step="1">✓ Decision Engine</span><span data-activation-step="2">✓ Sensor Network</span><span data-activation-step="3">✓ Crop Intelligence</span><span data-activation-step="4">✓ Risk Monitoring</span><span data-activation-step="5">✓ Sync Layer</span></div>
+      <div class="activation-footer"><span id="activationState" class="pill pill-green">LOCAL MODE</span><span class="activation-progress"><i></i></span><button id="skipActivationBtn" class="text-btn" type="button">Skip intro</button></div>
+    </div>
+  </div>
   <div id="appShell" class="app-shell locked">
     <aside class="sidebar" aria-label="Primary navigation">
       <div class="sidebar-top">
