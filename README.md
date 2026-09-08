@@ -1,112 +1,122 @@
 # BhoomiNOVA
 
-**BhoomiNOVA** is a field-first **AI Smart Farming Assistant** prepared for **SIH 2026 problem statement SIH26180**, in the **Qualcomm Inc. · Hardware · Disaster Management** context. It helps a farmer move from farmer profile and field setup to crop selection, sensor observations, camera observations, crop intelligence, risk assessment, recommended action, alerts, recovery, harvest readiness, history, and traceability.
+**BhoomiNOVA — Intelligence for Every Field** is a field-first smart-farming interface for SIH 2026 problem statement **SIH26180**, in the Qualcomm Inc. hardware and disaster-management context.
 
-The repository remains a lightweight static website that is compatible with GitHub Pages root deployment. It intentionally does not require a bundler, backend server, or new dependency. The current implementation is a credible prototype: its rule-based crop intelligence and simulated sensor values are clearly labelled, while future AI, hardware, notification, and assisted-registration boundaries remain explicit.
+The core product model is:
 
-## Current implementation
+> **SENSE → SEE → SCOUT → ANALYSE → ADVISE → ACT → VERIFY → RECOVER → LEARN**
 
-The app provides Google Sign-In as the primary Firebase Auth entry point, with Firebase Auth as the public sign-in path; local/offline state remains available when disconnected. After authentication, the farmer can create a farmer profile, farm, field, location, crop, growth-stage context, and cultivation details. The searchable crop catalog is extendable through the `CROPS` and `CROP_RULES` structures in `script.js`; it excludes Maize, Paddy, and Rice as required by the project brief.
+BhoomiNOVA combines farmer-owned field context, crop rules, observations, sensor adapters, offline-first decision support, explainable recommendations, and farmer-controlled actions. The website is a static GitHub Pages application and does not claim hardware, AI, weather, messaging, satellite, or government integrations that are not connected.
 
-The dashboard surfaces farmer, farm, field, selected crop, crop-health indicator, disease risk, pest risk, nutrient stress, irrigation/water stress, heat stress, drought risk, flood/excess-moisture risk, sensor status, Edge AI status, recent alerts, Family Assist status, and a crop-specific Next Best Action. Risk items use Low, Moderate, High, or Critical severity and always expose a reason and recommended action. Illustrative values are never presented as live sensor data.
+## Product status
 
-The ESP-12E is represented only as a **field sensor / telemetry node**. The interface can show temperature, humidity, soil moisture, light, battery/signal concepts, pairing state, and connection state when the hardware adapter is later connected. It does not claim that the ESP-12E performs computer vision or large-model inference. Camera observations are prepared from a field, crop, image, farmer note, and symptoms context for a smartphone, camera-capable edge device, Snapdragon-capable edge device, or future gateway. The current UI says **Vision AI Integration Ready** and does not fabricate diagnosis or accuracy.
+The public flow is **BhoomiNOVA intro → Who are you? → Farmer or Consumer → role-specific authentication**. The former internal Demo Workspace and Demo Login have been removed from the user-facing product.
 
-## Family Assist and notification architecture
+Farmer and Consumer workspaces are separate. Farmer access is private and UID-scoped; Consumer access is limited to farmer-approved public information. Firebase authentication is not required for the public landing page, so an unavailable Firebase/network service does not create a blank page or startup spinner.
 
-Family Assist lets a farmer record an authorized son, daughter, spouse, or trusted family member with name, relationship, phone number, and explicit farmer consent. The contact is stored under the authenticated farmer workspace and is not exposed across users. The notification model is channel-independent: Primary Farmer · In-app is available locally; Family Assist · WhatsApp is **Integration Ready** but no delivery is claimed; SMS and Voice / IVR are future channels. The prototype sends no SMS, WhatsApp, or voice message and includes no paid gateway dependency.
+After successful Firebase authentication, the user must create or verify an exactly six-digit security password. The password is stored as a salted SHA-256 hash under the authenticated Firebase UID; plaintext passwords are not stored in browser storage or Firestore. Google authentication and phone-number SMS OTP are supported through Firebase Auth when the provider configuration is available.
 
-## Firebase and ownership boundary
+## Implemented
 
-Google Sign-In uses the existing browser-safe Firebase client configuration and `firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())`. Authenticated workspaces are keyed by the Firebase UID in browser storage. The client prepares owner-aware documents under `users/{uid}` and `farmers/{uid}` with an `ownerUid` field, preserving existing farmer documents while adding the new profile, Family Assist, and notification fields through merge writes. Production Firestore Security Rules must enforce authenticated owner access, for example `request.auth.uid == resource.data.ownerUid` or equivalent nested-UID rules. No open read/write rules are introduced by this static frontend.
+| Area | Current state |
+| --- | --- |
+| Branding and entry | Official BhoomiNOVA logo, cinematic intro, timeout-safe activation, responsive Farmer/Consumer role selection. |
+| Authentication | Firebase Google popup/redirect flow, phone-number OTP path, role-specific login copy, auth error recovery, logout/session clearing. |
+| Security password | Six-digit setup and verification gate after authentication; salted hash stored against the Firebase UID. |
+| Farmer workspace | Dashboard, profile, crop catalog, rule-based assessment, alerts, history, recovery/harvest, sensors, map/digital-twin structure, adaptive monitoring, Smart Farming, offline network, procurement, reports, settings, and help. |
+| Consumer workspace | Separate shell with approved-public discovery, farmer UID search, products/harvest entry points, favorites, requests, notifications, profile, settings, and help. Private farmer modules are not rendered in the Consumer shell. |
+| Offline behavior | Local workspace state, pending-sync state, local decision-engine architecture, and reconnect/sync boundaries. Hardware operation is not controlled by the browser. |
+| Language architecture | Centralized English/Tamil/Hindi translation dictionary, persistent language selection, role-portal selector, and Settings selector. The architecture is extensible for full copy coverage. |
+| Truthful no-data states | Missing telemetry renders as **Not connected**, **Awaiting sensor data**, or **Analysis pending** rather than invented measurements or scores. |
 
-The existing Firebase data is not deleted or migrated destructively. A previously authenticated Firebase session can still be recognized by Firebase Auth; the primary UI now prefers Google Sign-In as requested. A Google account restores its own UID-scoped farmer workspace when the corresponding Firebase profile exists.
+## Integration-ready boundaries
 
-## Future Government Assisted Access
+The code contains provider-independent boundaries for a Personal AI Core, a BhoomiNOVA skill, crop knowledge/rules, tools, user preferences, and memory. The current browser application does not call an LLM, fabricate expert responses, or expose private Farmer memory to Consumers.
 
-The project reserves a clearly labelled **Future Government Assisted Access** concept. In a future deployment, an agriculture officer could help register a farmer who does not personally use a smartphone, but the officer would not become the farmer's identity. The conceptual sequence is officer-assisted registration → farmer consent → farmer profile → farm and field → crop → authorized family contact → notification preference. No government department or government API is connected in this prototype.
+The following are designed for future integration without claiming current availability:
 
-## Run locally
+- ESP32/ESP-12E, ESP-NOW, LoRa, gateway, and sensor telemetry adapters.
+- Open-Meteo weather context with last-known/offline handling.
+- Camera/image pipeline, model adapter, confidence, explanation, and expert-review workflow.
+- Sarvam-compatible voice provider abstraction with speech-to-text and text-to-speech fallback states.
+- MSG91-compatible SMS/OTP and critical-notification adapter.
+- MapLibre/MapCN-compatible map provider and attribution layer.
+- Public farm/product feed, farmer-approved content, consumer favorites, and connection requests.
+- Firebase Firestore owner rules and server-side validation.
+
+Unavailable services must display a truthful state such as **Service not connected**, **To be verified**, **Awaiting sync**, or **Analysis pending**.
+
+## Explicit waitlist
+
+The following are intentionally architecture/UI only:
+
+1. Actual drone hardware control or autonomous flight.
+2. Actual pump/relay hardware actuation.
+3. Production crop-diagnosis AI and expert response generation.
+4. Satellite NDVI and advanced satellite analytics.
+
+The UI may prepare a mission, action approval, image upload, or adapter contract, but it must not claim that a drone is connected, a pump is running, a diagnosis is confirmed, or satellite stress values are available.
+
+## Security and privacy
+
+Firebase client configuration is limited to the registered web-app configuration. Admin credentials and provider secrets are not stored in the repository. Firebase UID is the ownership boundary for authenticated data; Firestore Security Rules must enforce owner-only access in the deployed Firebase project. Public Farmer UIDs are discovery identifiers only and are never security permissions.
+
+Logout clears the browser session, role state, pending OAuth role, and active private workspace view. Switching roles returns to the public role portal. Consumer rendering does not include private Farmer boundaries, sensors, irrigation, family information, drone controls, private analytics, or private AI records.
+
+## Local run
 
 ```bash
 cd predictstor-site
 python3 -m http.server 4173
 ```
 
-Open <http://localhost:4173>. The repository root can be deployed directly through GitHub Pages from the `main` branch. No server-side routing is required.
+Open <http://localhost:4173>.
+
+The repository can be deployed from the `main` branch through GitHub Pages. No server-side routing is required for the static entry application.
 
 ## Files
 
 | File | Responsibility |
 | --- | --- |
-| `index.html` | Semantic app shell, farmer navigation, dashboard, sensors, crop intelligence, alerts, history, recovery trace, settings, Google Sign-In, Family Assist, and future-access UI. |
-| `style.css` | BhoomiNOVA visual system, responsive layouts, mobile slide-out navigation, cards, forms, statuses, and accessible states. |
-| `script.js` | Client routing, local workspace state, Google/Firebase auth boundary, owner-scoped persistence, crop rules, location-aware risk assessment, alerts, observations, Family Assist, notifications, history, and traceability. |
+| `index.html` | Intro, role portal, authenticated login/OTP/password modals, Farmer shell, Consumer shell mount, modules, and forms. |
+| `script.js` | Firebase initialization, auth routing, password gate, role separation, local persistence, routing, crop rules, no-data states, language architecture, and integration boundaries. |
+| `style.css` | BhoomiNOVA visual system, responsive layout, mobile navigation, overlays, cards, forms, statuses, and modal behavior. |
+| `assets/bhoominova-official-logo.png` | Official BhoomiNOVA logo supplied for the entry experience. |
 
-## Research-backed boundary and limitations
+## Development principles
 
-The crop rules are a transparent knowledge scaffold informed by the structure of agricultural guidance from [FAO crop water requirements][1], [TNAU crop production guides][2], [TNAU agrometeorology guidance][3], and [USDA integrated pest management principles][4]. Exact thresholds and actions must be validated with local ICAR, state agricultural university, and extension advice before production use. The prototype does not browse live sources, call a live weather API, diagnose disease, predict yield, claim live hardware connectivity, deliver WhatsApp/SMS/voice messages, or connect to government systems.
+BhoomiNOVA follows the rule:
 
-| Capability | Current state |
-| --- | --- |
-| Google Sign-In and logout | Firebase integration boundary implemented; Firebase Console must enable Google provider and authorized domains. |
-| Farmer/farm/field/crop profile | Implemented locally and prepared for UID-scoped Firebase merge persistence. |
-| Crop intelligence and risk assessment | Implemented as deterministic, crop-specific, location-aware rule scaffolding with explicit illustrative inputs. |
-| ESP-12E telemetry | Field-node pairing and status boundary are integration-ready; no live device is claimed. |
-| Camera / Edge AI | Observation preparation is implemented; vision analysis is not connected. |
-| Family Assist | Consent-based contact record and channel preferences are implemented; no message delivery is claimed. |
-| WhatsApp, SMS, Voice / IVR | Future backend/provider integrations only. |
-| Government Assisted Access | Future conceptual module only; no government connection is claimed. |
-| Firestore ownership enforcement | Client writes include `ownerUid`; production Security Rules must be configured and tested separately. |
+> **AI recommends. Safety rules validate. Farmer decides.**
 
-[1]: https://www.fao.org/4/x0490e/x0490e00.htm "FAO Irrigation and drainage paper 56"
-[2]: https://agritech.tnau.ac.in/pdf/AGRICULTURE.pdf "TNAU Crop Production Guide"
-[3]: https://agritech.tnau.ac.in/agriculture/agri_agrometeorology_microclimate.html "TNAU Agrometeorology"
-[4]: https://www.usda.gov/about-usda/general-information/staff-offices/office-chief-economist/office-pest-management-policy-opmp/integrated-pest-management "USDA Integrated Pest Management"
+No data is presented as live unless an actual integration confirms it. No diagnosis is presented as certain. No browser action directly powers a pump. No notification is described as delivered without a provider confirmation.
 
-## Final offline-first architecture pass
+## Research boundary
 
-BhoomiNOVA is the digital interface of a distributed, offline-first field system. Strategic sensors and a camera feed an ESP32/ESP-12E field transmitter over a local wireless link such as ESP-NOW or LoRa. The farmer's home gateway stores buffered data locally, displays values, drives buzzer/LED outputs, and runs the local decision engine even when the Internet is unavailable. When connectivity returns, buffered events can synchronize to Firebase/cloud services. This static interface labels all telemetry and integrations honestly as Demo, Simulation, Integration Ready, Planned, Local Mode, Pending Sync, or Sync Complete.
+The crop-rule scaffold is intended for interface and explainability work. It must be validated against local ICAR, state agricultural university, extension, and field evidence before production agronomic decisions. The current application does not browse live agricultural sources, call live weather services, diagnose disease, predict yield, deliver SMS/WhatsApp/voice messages, or connect to government systems.
 
-The intelligence model is layered: deterministic local rules handle immediate thresholds and hardware conditions; Edge AI is reserved for image-based crop assessment; Cloud AI is reserved for historical and multi-source analysis; and the farmer remains in control of higher-risk actions. The safety pattern is **AI recommends → safety rules validate → farmer approves where required → actuator performs a configured safe action**.
+## Verification checklist
 
-The new operating modules cover the private farm map and digital twin, adaptive small/medium/large deployment bands, low-power wake/sense/process/transmit/sleep behavior, smart irrigation decisions, optional drone mission planning, offline network and sync state, public 10-digit discovery UID, Farmer/Consumer privacy separation, official-data-dependent procurement, local reports, and backup/restore concepts. Public UID is never a security permission; Firebase UID and owner-only Firestore rules remain the data boundary. PredicStor remains a future post-harvest integration and BhoomiNOVA remains focused on field intelligence.
+Before deployment, verify:
 
-The visual architecture story is: **SENSE** ground sensors → **SEE** smartphone/camera → **SCOUT** optional drone → **ANALYSE** local rules + Edge AI + Cloud AI → **ACT** alerts, recommendations, safe actuator integration, and farmer decisions.
+- Firebase Google and Phone providers and authorized domains.
+- Firebase Firestore owner-only Security Rules.
+- Six-digit password Firestore access and reset/recovery policy.
+- Mobile and desktop OAuth behavior.
+- Open-Meteo, map, AI, voice, SMS, sensor, gateway, and hardware providers.
+- Empty-state, offline, reconnect, logout, refresh, role-switching, and failed-provider behavior.
+- Full translation coverage for all Farmer and Consumer dynamic copy.
 
+The repository is a truthful SIH-ready prototype, not a claim that every external integration is already connected.
 
-## Functional integration and demo system pass
+**Repository:** <https://github.com/sj-spidy05/predictstor-site>
+**Deployment target:** GitHub Pages from `main`
 
-The current main branch includes a connected browser prototype layer without changing the existing BhoomiNOVA visual identity. Every fresh page load runs the cinematic entry sequence with a timeout-safe state machine before role selection; switching between Farmer and Consumer returns to role selection without a blank screen. The Consumer workspace now stores a persistent local Buyer UID, viewed public profiles, favorites, follows-ready state, enquiries, request history, and notification-ready state. It searches only farmer-approved public UID data and does not expose private farm geometry, sensor values, irrigation, family, or analytics data.
+[FAO crop water requirements]: https://www.fao.org/4/x0490e/x0490e00.htm
+[TNAU crop production guides]: https://agritech.tnau.ac.in/pdf/AGRICULTURE.pdf
+[TNAU agrometeorology guidance]: https://agritech.tnau.ac.in/agriculture/agri_agrometeorology_microclimate.html
+[USDA integrated pest management]: https://www.usda.gov/about-usda/general-information/staff-offices/office-chief-economist/office-pest-management-policy-opmp/integrated-pest-management
 
-The Farmer prototype includes a functional spatial boundary sequence (select → confirm → save), persisted farm/zone metadata, a field-condition simulator, local rule evaluation, critical dry-soil event creation, alert creation, dashboard refresh, and offline/online sync queue states. Simulated packets and actions are explicitly labelled DEMO/SIMULATED; no physical relay, pump, drone, AI diagnosis, SMS, WhatsApp, or voice delivery is claimed. The existing Firebase client boundary remains UID-scoped and is used only when Firebase Auth and Firestore are available; localStorage remains the offline demo buffer.
+## References
 
-The field simulator is intentionally deterministic: changing soil moisture to a critical value creates a “Zone 2 — Critical Water Stress” event, records a recommendation to irrigate after farmer approval, increments pending sync state, and updates the dashboard. The official BhoomiNOVA logo is stored at `assets/bhoominova-official-logo.png` and is used by the entry experience. Remaining production dependencies are Firebase Console/provider configuration, Firestore Security Rules deployment, real sensor/gateway/LoRa hardware, a verified AI provider, weather data, notification providers, and drone hardware/services.
-
-
-## Final continuation pass: refresh-safe workspace
-
-The boot flow now restores the locally persisted demo session, Farmer/Consumer role, current Farmer route, workspace telemetry, pending sync count, farm map status, custom sensors, automation rules, event history, Consumer Buyer UID, favorites, and request history after an actual browser reload. The cinematic intro still runs on every fresh page load, then the restored demo workspace reopens without losing the route or data. Intentional Switch User remains distinct from refresh and returns immediately to role selection without deleting persistent records.
-
-The Sensors page now supports locally persisted custom sensor configuration. The Offline Network page now supports locally persisted automation rules with configurable sensor, operator, value, action, and farmer-approval boundary. The dry-field simulator updates stored telemetry, creates a critical water-stress event/alert, increments the pending queue, and keeps the result explicitly marked as DEMO/SIMULATED. Firebase Google sign-in now explicitly requests LOCAL auth persistence when the SDK exposes that capability, and the UID-scoped sync payload is prepared to include the consumer profile.
-
-
-## Prototype integration pass: Consumer views and Farm Map controls
-
-The Consumer shell now opens real local views for Home, Discover Farmers, Products & Harvest, Favorites, Requests & History, Notifications, and Profile. Consumer Profile saves full name, store, phone, city, description, and a public-visibility choice locally alongside the generated Buyer UID. Products and procurement clearly show integration-ready or official-data-required states rather than fabricating listings or government status. Consumer rendering remains separate from the Farmer shell and does not expose private map, sensor, irrigation, family, AI, or analytics data.
-
-The Farmer Farm Map now has a lightweight static-host-compatible interactive prototype layer: demo location search, zoom controls, reset, sensor-marker placement, and named-zone creation. These controls persist selected location, markers, and zones in the owner-scoped local workspace. The map remains explicitly labelled as a local demo; real basemap/satellite/GPS provider integration is not claimed.
-
-
-## Authentication and production-flow hardening
-
-The public entry flow now uses Firebase Authentication as its source of truth. The obsolete public demo-login path was removed. Google Sign-In uses explicit local persistence, a mobile redirect path where required, a desktop popup path, one auth-state listener, redirect-result handling, and actionable error messages for common Firebase Auth failures. Successful authentication closes stale login UI and routes directly to the persisted Farmer or Consumer workspace without requiring a refresh.
-
-Farmer profile save is owner-scoped to the authenticated Firebase UID and requires confirmed Firebase sync for authenticated sessions before closing the profile form; local drafts remain available when the network is unavailable. Consumer profile edits use the same UID-scoped sync payload. Mobile fields no longer fall back to the account email and display `Not added` when no mobile number exists. Public UID, route, local workspace, Consumer profile, and offline state remain persisted separately from authentication state.
-
-The GitHub Pages production build contains one Firebase client configuration and one initialization path. Firebase Console Google provider enablement, authorized domains, Firestore rules, and external provider availability remain deployment-level dependencies; this repository does not expose Admin credentials or alter Security Rules.
-
-
-## Google authentication redirect-loop protection
-
-The entry controller now waits for Firebase Auth initialization and redirect-result processing before showing the public intro. Authenticated users bypass the intro and role selection on refresh, while signed-out users receive the normal cinematic entry flow. A temporary pending-role key preserves Farmer or Consumer selection across popup and redirect authentication, and it is cleared only after the authenticated workspace or profile route is initialized. Logout and Switch User explicitly reset the entry controller so the intro can be shown intentionally again.
+The crop-rule scaffolding is informed by the structure of agricultural guidance from [FAO crop water requirements], [TNAU crop production guides], [TNAU agrometeorology guidance], and [USDA integrated pest management].
