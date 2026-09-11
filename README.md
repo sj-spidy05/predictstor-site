@@ -14,7 +14,7 @@ The public flow is **BhoomiNOVA intro → Who are you? → Farmer or Consumer �
 
 Farmer and Consumer workspaces are separate. Farmer access is private and UID-scoped; Consumer access is limited to farmer-approved public information. Firebase authentication is not required for the public landing page, so an unavailable Firebase/network service does not create a blank page or startup spinner.
 
-After successful Firebase authentication, the user must create or verify an exactly six-digit security password. The password is stored as a salted SHA-256 hash under the authenticated Firebase UID; plaintext passwords are not stored in browser storage or Firestore. Google authentication and phone-number SMS OTP are supported through Firebase Auth when the provider configuration is available.
+After successful Firebase authentication, the user must create or verify an exactly six-digit security password. The password is stored as a salted SHA-256 hash under the authenticated Firebase UID; plaintext passwords are not stored in browser storage or Firestore. Google authentication and phone-number SMS OTP are supported through Firebase Auth when the provider configuration is available. Authentication and the application security gate are separate states: `AUTHENTICATED` is not equivalent to `UNLOCKED`.
 
 ## Implemented
 
@@ -22,7 +22,7 @@ After successful Firebase authentication, the user must create or verify an exac
 | --- | --- |
 | Branding and entry | Official BhoomiNOVA logo, cinematic intro, timeout-safe activation, responsive Farmer/Consumer role selection. |
 | Authentication | Firebase Google popup/redirect flow, phone-number OTP path, role-specific login copy, auth error recovery, logout/session clearing. |
-| Security password | Six-digit setup and verification gate after authentication; salted hash stored against the Firebase UID. |
+| Security password | Explicit UID-bound state machine for account loading, password setup, locked verification, reset, and unlocked workspace access; salted hash stored against the Firebase UID. |
 | Farmer workspace | Dashboard, profile, crop catalog, rule-based assessment, alerts, history, recovery/harvest, sensors, map/digital-twin structure, adaptive monitoring, Smart Farming, offline network, procurement, reports, settings, and help. |
 | Consumer workspace | Separate shell with approved-public discovery, farmer UID search, products/harvest entry points, favorites, requests, notifications, profile, settings, and help. Private farmer modules are not rendered in the Consumer shell. |
 | Offline behavior | Local workspace state, pending-sync state, local decision-engine architecture, and reconnect/sync boundaries. Hardware operation is not controlled by the browser. |
@@ -59,7 +59,7 @@ The UI may prepare a mission, action approval, image upload, or adapter contract
 
 ## Security and privacy
 
-Firebase client configuration is limited to the registered web-app configuration. Admin credentials and provider secrets are not stored in the repository. Firebase UID is the ownership boundary for authenticated data; Firestore Security Rules must enforce owner-only access in the deployed Firebase project. Public Farmer UIDs are discovery identifiers only and are never security permissions.
+Firebase client configuration is limited to the registered web-app configuration. Admin credentials and provider secrets are not stored in the repository. Firebase UID is the ownership boundary for authenticated data; Firestore Security Rules must enforce owner-only access in the deployed Firebase project. Public Farmer UIDs are discovery identifiers only and are never security permissions. The current GitHub Pages architecture necessarily performs the password hash comparison in the browser after reading the UID-scoped credential record; this is not equivalent to server-side secret verification. A production deployment should move credential verification and reset authorization to a trusted Firebase Cloud Function or equivalent backend without changing the UID/state-machine contract.
 
 Logout clears the browser session, role state, pending OAuth role, and active private workspace view. Switching roles returns to the public role portal. Consumer rendering does not include private Farmer boundaries, sensors, irrigation, family information, drone controls, private analytics, or private AI records.
 
